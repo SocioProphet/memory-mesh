@@ -1,0 +1,60 @@
+schema_version: 1
+updated_at: 2026-04-04T00:00:00Z
+owner: SocioProphet
+project: memorymesh
+sources:
+  - id: litellm
+    ecosystem: pypi
+    package: litellm
+    version: 1.83.2
+    source_url: https://pypi.org/project/litellm/
+    license: MIT
+    mirror_strategy: internal_oci_or_wheelhouse
+    runtime_role: gateway
+    artifact_digest: null
+    notes: Prefer official stable proxy image pinned by digest or an internally built image; do not pip install from public PyPI in production.
+  - id: openclaw
+    ecosystem: npm
+    package: openclaw
+    version: 2026.4.2
+    source_url: https://www.npmjs.com/package/openclaw
+    license: MIT
+    mirror_strategy: internal_npm_tarball_or_baked_image
+    runtime_role: agent_gateway
+    artifact_digest: null
+    notes: Plugins should be installed from local tarballs or bundled at image build time.
+  - id: stagehand
+    ecosystem: npm
+    package: '@browserbasehq/stagehand'
+    version: 3.2.0
+    source_url: https://www.npmjs.com/package/@browserbasehq/stagehand
+    license: UNKNOWN
+    mirror_strategy: internal_npm_tarball
+    runtime_role: browser_agent_library
+    artifact_digest: null
+    notes: Pin via package-lock and mirror resolved tarball if we need air-gapped builds.
+  - id: mem0ai
+    ecosystem: pypi
+    package: mem0ai
+    version: 1.0.10
+    source_url: https://pypi.org/project/mem0ai/
+    license: Apache-2.0
+    mirror_strategy: internal_oci_or_wheelhouse
+    runtime_role: semantic_memory_worker
+    artifact_digest: null
+    notes: Use as backend worker; keep our stable memorymesh API in front of it.
+  - id: gpt4all-python
+    ecosystem: pypi
+    package: gpt4all
+    version: 2.8.2
+    source_url: https://pypi.org/project/gpt4all/
+    license: MIT
+    mirror_strategy: internal_wheelhouse
+    runtime_role: local_runtime_binding
+    artifact_digest: null
+    notes: Runtime binary and model blobs should be pinned separately from the Python package.
+policies:
+  require_exact_versions: true
+  forbid_version_ranges: true
+  forbid_runtime_public_fetch: true
+  require_mirror_before_prod: true

@@ -1,0 +1,64 @@
+services:
+  postgres:
+    image: ${POSTGRES_IMAGE:-postgres:16}
+    container_name: memorymesh-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-memorymesh}
+      POSTGRES_USER: ${POSTGRES_USER:-memorymesh}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-memorymesh-dev-password}
+    ports:
+      - "127.0.0.1:${POSTGRES_HOST_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-memorymesh} -d ${POSTGRES_DB:-memorymesh}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  qdrant:
+    image: ${QDRANT_IMAGE:-qdrant/qdrant}
+    container_name: memorymesh-qdrant
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${QDRANT_HOST_PORT:-6333}:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:6333/ >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  memoryd:
+    image: ${MEMORYD_IMAGE:-localhost/memorymesh-memoryd:dev}
+    build:
+      context: ../..
+      dockerfile: images/memoryd.Dockerfile
+    container_name: memorymesh-memoryd
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+    environment:
+      MEMORYD_REQUIRE_API_KEY: ${MEMORYD_REQUIRE_API_KEY:-true}
+      MEMORYD_API_KEY: ${MEMORYD_API_KEY:-memorymesh-local-dev}
+      MEMORYMESH_STORE_URI: ${MEMORYMESH_STORE_URI:-postgresql://memorymesh:memorymesh-dev-password@postgres:5432/memorymesh}
+      MEMORYMESH_VECTOR_BACKEND: ${MEMORYMESH_VECTOR_BACKEND:-qdrant}
+      QDRANT_URL: ${QDRANT_URL:-http://qdrant:6333}
+      QDRANT_COLLECTION: ${QDRANT_COLLECTION:-memorymesh-local}
+      QDRANT_ENABLED: ${QDRANT_ENABLED:-true}
+      MEMORYMESH_VECTOR_SIZE: ${MEMORYMESH_VECTOR_SIZE:-256}
+      MEM0_BASE_URL: ${MEM0_BASE_URL:-}
+      MEM0_API_KEY: ${MEM0_API_KEY:-}
+    ports:
+      - "127.0.0.1:${MEMORYD_HOST_PORT:-8787}:8787"
+    command: >-
+      uvicorn services.memoryd.app.main:app --host 0.0.0.0 --port 8787
+
+volumes:
+  postgres_data:
+  qdrant_data:

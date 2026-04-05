@@ -1,0 +1,590 @@
+openapi: 3.0.2
+info:
+  title: memoryd
+  version: 0.2.0
+paths:
+  /:
+    get:
+      summary: Root
+      operationId: root__get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: Response Root  Get
+                type: object
+  /healthz:
+    get:
+      summary: Healthz
+      operationId: healthz_healthz_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: Response Healthz Healthz Get
+                type: object
+  /v1/resources/apply:
+    post:
+      summary: Apply Resource
+      operationId: apply_resource_v1_resources_apply_post
+      parameters:
+      - required: false
+        schema:
+          title: X-Api-Key
+          type: string
+        name: x-api-key
+        in: header
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MeshResource'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplyResourceResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/resources/{kind}/{namespace}/{name}:
+    get:
+      summary: Get Resource
+      operationId: get_resource_v1_resources__kind___namespace___name__get
+      parameters:
+      - required: true
+        schema:
+          title: Kind
+          type: string
+        name: kind
+        in: path
+      - required: true
+        schema:
+          title: Namespace
+          type: string
+        name: namespace
+        in: path
+      - required: true
+        schema:
+          title: Name
+          type: string
+        name: name
+        in: path
+      - required: false
+        schema:
+          title: X-Api-Key
+          type: string
+        name: x-api-key
+        in: header
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: Response Get Resource V1 Resources  Kind   Namespace   Name  Get
+                type: object
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/config/{workload_id}:
+    get:
+      summary: Get Compiled Config
+      operationId: get_compiled_config_v1_config__workload_id__get
+      parameters:
+      - required: true
+        schema:
+          title: Workload Id
+          type: string
+        name: workload_id
+        in: path
+      - required: false
+        schema:
+          title: X-Api-Key
+          type: string
+        name: x-api-key
+        in: header
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompiledWorkloadConfig'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/watch/config/{workload_id}:
+    get:
+      summary: Watch Workload Config
+      operationId: watch_workload_config_v1_watch_config__workload_id__get
+      parameters:
+      - required: true
+        schema:
+          title: Workload Id
+          type: string
+        name: workload_id
+        in: path
+      - required: false
+        schema:
+          title: X-Api-Key
+          type: string
+        name: x-api-key
+        in: header
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/recall:
+    post:
+      summary: Recall
+      operationId: recall_v1_recall_post
+      parameters:
+      - required: false
+        schema:
+          title: X-Api-Key
+          type: string
+        name: x-api-key
+        in: header
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecallRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecallResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/write:
+    post:
+      summary: Write
+      operationId: write_v1_write_post
+      parameters:
+      - required: false
+        schema:
+          title: X-Api-Key
+          type: string
+        name: x-api-key
+        in: header
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WriteRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WriteResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/events:
+    get:
+      summary: List Events
+      operationId: list_events_v1_events_get
+      parameters:
+      - required: false
+        schema:
+          title: Limit
+          type: integer
+          default: 50
+        name: limit
+        in: query
+      - required: false
+        schema:
+          title: X-Api-Key
+          type: string
+        name: x-api-key
+        in: header
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: Response List Events V1 Events Get
+                type: object
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+components:
+  schemas:
+    ApplyResourceResponse:
+      title: ApplyResourceResponse
+      required:
+      - applied
+      - resource_key
+      type: object
+      properties:
+        applied:
+          title: Applied
+          type: boolean
+        resource_key:
+          title: Resource Key
+          type: string
+    CompiledWorkloadConfig:
+      title: CompiledWorkloadConfig
+      required:
+      - workload_id
+      type: object
+      properties:
+        workload_id:
+          title: Workload Id
+          type: string
+        recall_scope_order:
+          title: Recall Scope Order
+          type: array
+          items:
+            type: string
+        recall_top_k_limit:
+          title: Recall Top K Limit
+          type: integer
+          default: 10
+        local_first:
+          title: Local First
+          type: boolean
+          default: true
+        writeback_enabled:
+          title: Writeback Enabled
+          type: boolean
+          default: true
+        allow_backend_persistence:
+          title: Allow Backend Persistence
+          type: boolean
+          default: true
+        attachments:
+          title: Attachments
+          type: array
+          items:
+            type: object
+        peers:
+          title: Peers
+          type: array
+          items:
+            type: object
+        export_policies:
+          title: Export Policies
+          type: array
+          items:
+            type: object
+        conflict_policies:
+          title: Conflict Policies
+          type: array
+          items:
+            type: object
+    HTTPValidationError:
+      title: HTTPValidationError
+      type: object
+      properties:
+        detail:
+          title: Detail
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationError'
+    MemoryClass:
+      title: MemoryClass
+      enum:
+      - interaction
+      - fact
+      - preference
+      - decision
+      - summary
+      - scratch
+      type: string
+      description: An enumeration.
+    MemoryHit:
+      title: MemoryHit
+      required:
+      - memory_id
+      - text
+      - score
+      - source
+      - scope
+      type: object
+      properties:
+        memory_id:
+          title: Memory Id
+          type: string
+        text:
+          title: Text
+          type: string
+        score:
+          title: Score
+          type: number
+        source:
+          title: Source
+          type: string
+        scope:
+          title: Scope
+          type: string
+        tags:
+          title: Tags
+          type: array
+          items:
+            type: string
+        metadata:
+          title: Metadata
+          type: object
+        event_id:
+          title: Event Id
+          type: string
+    MeshResource:
+      title: MeshResource
+      required:
+      - kind
+      - metadata
+      type: object
+      properties:
+        apiVersion:
+          title: Apiversion
+          type: string
+          default: memorymesh.socioprophet.io/v1alpha1
+        kind:
+          title: Kind
+          enum:
+          - MemoryAttachment
+          - GlobalRecallPolicy
+          - MemoryPeer
+          - ExportPolicy
+          - ConflictPolicy
+          type: string
+        metadata:
+          $ref: '#/components/schemas/ResourceMetadata'
+        spec:
+          title: Spec
+          type: object
+    RecallRequest:
+      title: RecallRequest
+      required:
+      - envelope
+      - query
+      type: object
+      properties:
+        envelope:
+          $ref: '#/components/schemas/ScopeEnvelope'
+        query:
+          title: Query
+          type: string
+        top_k:
+          title: Top K
+          maximum: 50.0
+          minimum: 1.0
+          type: integer
+          default: 5
+        scope_order:
+          title: Scope Order
+          type: array
+          items:
+            type: string
+        include_relations:
+          title: Include Relations
+          type: boolean
+          default: false
+        include_raw_events:
+          title: Include Raw Events
+          type: boolean
+          default: false
+        filters:
+          title: Filters
+          type: object
+        query_vector:
+          title: Query Vector
+          type: array
+          items:
+            type: number
+    RecallResponse:
+      title: RecallResponse
+      required:
+      - query
+      - hits
+      - compiled_policy
+      type: object
+      properties:
+        query:
+          title: Query
+          type: string
+        hits:
+          title: Hits
+          type: array
+          items:
+            $ref: '#/components/schemas/MemoryHit'
+        compiled_policy:
+          title: Compiled Policy
+          type: object
+    ResourceMetadata:
+      title: ResourceMetadata
+      required:
+      - name
+      type: object
+      properties:
+        namespace:
+          title: Namespace
+          type: string
+          default: default
+        name:
+          title: Name
+          type: string
+        labels:
+          title: Labels
+          type: object
+          additionalProperties:
+            type: string
+        annotations:
+          title: Annotations
+          type: object
+          additionalProperties:
+            type: string
+    ScopeEnvelope:
+      title: ScopeEnvelope
+      required:
+      - user_id
+      - agent_id
+      - run_id
+      - workload_id
+      - source_interface
+      type: object
+      properties:
+        user_id:
+          title: User Id
+          type: string
+        agent_id:
+          title: Agent Id
+          type: string
+        run_id:
+          title: Run Id
+          type: string
+        workload_id:
+          title: Workload Id
+          type: string
+        workspace_id:
+          title: Workspace Id
+          type: string
+        channel:
+          title: Channel
+          type: string
+        thread_id:
+          title: Thread Id
+          type: string
+        source_interface:
+          title: Source Interface
+          type: string
+        metadata:
+          title: Metadata
+          type: object
+    ValidationError:
+      title: ValidationError
+      required:
+      - loc
+      - msg
+      - type
+      type: object
+      properties:
+        loc:
+          title: Location
+          type: array
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+        msg:
+          title: Message
+          type: string
+        type:
+          title: Error Type
+          type: string
+    WriteRequest:
+      title: WriteRequest
+      required:
+      - envelope
+      - content
+      type: object
+      properties:
+        envelope:
+          $ref: '#/components/schemas/ScopeEnvelope'
+        content:
+          title: Content
+          minLength: 1
+          type: string
+        memory_class:
+          allOf:
+          - $ref: '#/components/schemas/MemoryClass'
+          default: interaction
+        persist_to_backend:
+          title: Persist To Backend
+          type: boolean
+          default: true
+        metadata:
+          title: Metadata
+          type: object
+        tags:
+          title: Tags
+          type: array
+          items:
+            type: string
+        vector:
+          title: Vector
+          type: array
+          items:
+            type: number
+    WriteResponse:
+      title: WriteResponse
+      required:
+      - event_id
+      type: object
+      properties:
+        event_id:
+          title: Event Id
+          type: string
+        backend_memory_ids:
+          title: Backend Memory Ids
+          type: array
+          items:
+            type: string
+        stored_locally:
+          title: Stored Locally
+          type: boolean
+          default: true

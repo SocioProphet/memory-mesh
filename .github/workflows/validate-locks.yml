@@ -1,0 +1,30 @@
+name: validate-locks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install tooling
+        run: python -m pip install pyyaml
+      - name: Validate upstream manifest
+        run: python scripts/validate_upstreams.py third_party/upstreams.lock.yaml
+      - name: Render import plan
+        run: python scripts/render_import_plan.py third_party/upstreams.lock.yaml --output import-plan.json
+      - name: Resolve upstream artifacts
+        run: python scripts/import_upstreams.py third_party/upstreams.lock.yaml --output third_party/resolved.upstreams.json
+      - name: Upload importer artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: importer-artifacts
+          path: |
+            import-plan.json
+            third_party/resolved.upstreams.json

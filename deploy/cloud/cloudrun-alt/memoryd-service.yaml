@@ -1,0 +1,26 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: memoryd-review
+spec:
+  template:
+    spec:
+      containers:
+        - image: REGION-docker.pkg.dev/PROJECT/REPO/memoryd@sha256:REPLACE_ME
+          ports:
+            - containerPort: 8787
+          env:
+            - name: PORT
+              value: "8787"
+            - name: MEMORYD_REQUIRE_API_KEY
+              value: "true"
+            - name: MEMORYMESH_STORE_URI
+              value: postgresql://memorymesh:change-me@10.0.0.10:5432/memorymesh
+            - name: MEMORYMESH_VECTOR_BACKEND
+              value: qdrant
+            - name: QDRANT_URL
+              value: http://10.0.0.20:6333
+            - name: QDRANT_COLLECTION
+              value: memorymesh-review
+            - name: QDRANT_ENABLED
+              value: "true"
