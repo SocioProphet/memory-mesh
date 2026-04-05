@@ -1,6 +1,6 @@
-# memorymesh starter
+# memory-mesh-upstream
 
-This repository starter is structured as if it were the initial cut of `SocioProphet/memorymesh`.
+This repository is the upstream baseline for the SocioProphet memory mesh runtime and deployment work.
 
 It keeps three concerns separate:
 
@@ -10,17 +10,23 @@ It keeps three concerns separate:
 
 ## Current status
 
-This starter now includes:
+This upstream currently includes:
 
-- a runnable `memoryd` FastAPI service with an in-memory store and a Mem0 REST backend adapter;
+- a runnable `memoryd` FastAPI service with in-memory, SQLite, and PostgreSQL store seams;
+- optional vector retrieval wiring through Qdrant plus a deterministic local embedder for bring-up;
 - a LiteLLM callback hook that performs recall-before-call and writeback-after-call;
 - an OpenClaw plugin that exposes `memory_search` and `memory_write` tools;
 - repo-native lock manifests for upstream software and model artifacts;
-- importer/validation scripts so upstream resolution happens in one controlled place instead of at runtime.
+- importer and validation scripts so upstream resolution happens in one controlled place instead of at runtime;
+- local M2 Mac Podman and Google Cloud review deployment scaffolding.
+
+## Repository semantics
+
+This is not a disposable starter artifact. This repository is the canonical upstream baseline for branch-and-PR driven development.
 
 ## Recommended repo split
 
-- `memorymesh` owns the runtime, adapters, importer logic, and build inputs.
+- `memory-mesh-upstream` owns the runtime, adapters, importer logic, deployment scaffolding, and build inputs.
 - `socioprophet-standards-storage` should mirror ADRs, normative schemas, retention policy, and benchmarks.
 - `sociosphere` should register the component and adapter manifests.
 
@@ -32,11 +38,11 @@ adapters/
   openclaw-memory-mesh/
 artifacts/
   models.lock.yaml
+deploy/
 services/
   memoryd/
 specs/
   memoryd.openapi.yaml
-  schemas/
 third_party/
   upstreams.lock.yaml
 scripts/
@@ -55,11 +61,10 @@ scripts/
 ## Quickstart
 
 ```bash
-cd services/memoryd
 python -m venv .venv
 . .venv/bin/activate
-pip install -e .
-uvicorn app.main:app --reload --port 8787
+python -m pip install -r services/memoryd/requirements.txt
+uvicorn services.memoryd.app.main:app --reload --port 8787
 ```
 
 In another shell:
