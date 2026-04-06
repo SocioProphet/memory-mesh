@@ -1,6 +1,6 @@
-# memory-mesh-upstream
+# memorymesh
 
-This repository is the upstream baseline for the SocioProphet memory mesh runtime and deployment work.
+This repository is the canonical upstream baseline for the SocioProphet memory mesh runtime and deployment work.
 
 It keeps three concerns separate:
 
@@ -10,7 +10,7 @@ It keeps three concerns separate:
 
 ## Current status
 
-This upstream currently includes:
+This repository currently includes:
 
 - a runnable `memoryd` FastAPI service with in-memory, SQLite, and PostgreSQL store seams;
 - optional vector retrieval wiring through Qdrant plus a deterministic local embedder for bring-up;
@@ -22,11 +22,11 @@ This upstream currently includes:
 
 ## Repository semantics
 
-This is not a disposable starter artifact. This repository is the canonical upstream baseline for branch-and-PR driven development.
+This is the canonical public repository for the runtime and deployment work. It is not a disposable starter artifact.
 
 ## Recommended repo split
 
-- `memory-mesh-upstream` owns the runtime, adapters, importer logic, deployment scaffolding, and build inputs.
+- `memorymesh` owns the runtime, adapters, importer logic, deployment scaffolding, and build inputs.
 - `socioprophet-standards-storage` should mirror ADRs, normative schemas, retention policy, and benchmarks.
 - `sociosphere` should register the component and adapter manifests.
 
