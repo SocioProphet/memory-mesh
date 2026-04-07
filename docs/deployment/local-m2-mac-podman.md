@@ -31,19 +31,6 @@ We also want Apple Silicon to be a first-class build target. That means `arm64` 
 - a Compose provider available to `podman compose`
 - Python locally only if you want to run repo scripts outside containers
 
-## Bootstrap steps
-
-```bash
-./deploy/local/scripts/bootstrap-podman-m2.sh
-```
-
-This script:
-
-- initializes a Podman machine if needed;
-- starts the machine;
-- verifies the socket is available;
-- launches the compose stack.
-
 ## Environment
 
 Copy the example environment file.
@@ -58,27 +45,58 @@ Set at least:
 - `MEMORYMESH_STORE_URI`
 - optional Qdrant and Mem0 settings
 
-## Start the stack
+## Recommended local sequence
+
+### 1. Preflight the workstation
 
 ```bash
-cd deploy/local
-podman compose --env-file .env -f podman-compose.yaml up -d
+bash deploy/local/scripts/preflight-podman-m2.sh
 ```
 
-## Check health
+This checks:
+
+- Podman installation
+- compose-provider availability
+- required repo files
+- expected local ports
+- basic Apple Silicon assumptions
+
+### 2. Bootstrap the stack
+
+```bash
+bash deploy/local/scripts/bootstrap-podman-m2.sh
+```
+
+This script:
+
+- runs the preflight helper;
+- initializes a Podman machine if needed;
+- starts the machine;
+- verifies the socket is available;
+- launches the compose stack.
+
+### 3. Run the smoke test
+
+```bash
+bash deploy/local/scripts/smoke-local.sh
+```
+
+The smoke test writes a memory and then recalls it.
+
+### 4. Collect a debug bundle if bring-up fails
+
+```bash
+bash deploy/local/scripts/collect-local-debug.sh
+```
+
+This writes a timestamped local debug bundle under `.artifacts/local-debug/` with Podman info, container state, logs, and health endpoint output.
+
+## Check health manually
 
 ```bash
 curl http://127.0.0.1:8787/healthz
 curl http://127.0.0.1:6333/
 ```
-
-## Run the smoke test
-
-```bash
-./deploy/local/scripts/smoke-local.sh
-```
-
-The smoke test writes a memory and then recalls it.
 
 ## Notes for Apple Silicon
 
@@ -92,6 +110,15 @@ The smoke test writes a memory and then recalls it.
 2. Develop `memoryd` first.
 3. Attach LiteLLM and OpenClaw adapters against local `memoryd`.
 4. Keep LLM runtimes host-local until the memory plane is stable.
+
+## Local acceptance checks
+
+The local M2 path is acceptable when:
+
+- `memoryd`, PostgreSQL, and Qdrant all come up under `podman compose`;
+- `curl http://127.0.0.1:8787/healthz` returns successfully;
+- `bash deploy/local/scripts/smoke-local.sh` returns a recalled item;
+- debug collection works if a container fails.
 
 ## Troubleshooting
 
