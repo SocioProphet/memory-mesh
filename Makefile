@@ -1,6 +1,6 @@
 PYTHON ?= python
 
-.PHONY: validate-upstreams validate-python validate-deploy-assets validate local-preflight local-up local-smoke local-debug local-down
+.PHONY: validate-upstreams validate-python validate-deploy-assets validate local-preflight local-up local-status local-smoke local-debug local-down local-reset
 
 validate-upstreams:
 	$(PYTHON) scripts/validate_upstreams.py third_party/upstreams.lock.yaml
@@ -21,6 +21,9 @@ local-preflight:
 local-up:
 	bash deploy/local/scripts/bootstrap-podman-m2.sh
 
+local-status:
+	bash deploy/local/scripts/status-local.sh
+
 local-smoke:
 	bash deploy/local/scripts/smoke-local.sh
 
@@ -29,3 +32,6 @@ local-debug:
 
 local-down:
 	bash deploy/local/scripts/down-local.sh
+
+local-reset:
+	bash deploy/local/scripts/reset-local.sh

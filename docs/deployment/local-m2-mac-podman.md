@@ -54,9 +54,11 @@ The repository now includes a root `Makefile` with the main local operator paths
 ```bash
 make local-preflight
 make local-up
+make local-status
 make local-smoke
 make local-debug
 make local-down
+make local-reset
 ```
 
 These commands wrap the scripts below.
@@ -91,7 +93,16 @@ This script:
 - verifies the socket is available;
 - launches the compose stack.
 
-### 3. Run the smoke test
+### 3. Inspect current status
+
+```bash
+make local-status
+# or: bash deploy/local/scripts/status-local.sh
+```
+
+This shows compose status and checks the `memoryd` and Qdrant health endpoints.
+
+### 4. Run the smoke test
 
 ```bash
 make local-smoke
@@ -100,7 +111,7 @@ make local-smoke
 
 The smoke test writes a memory and then recalls it.
 
-### 4. Collect a debug bundle if bring-up fails
+### 5. Collect a debug bundle if bring-up fails
 
 ```bash
 make local-debug
@@ -109,12 +120,21 @@ make local-debug
 
 This writes a timestamped local debug bundle under `.artifacts/local-debug/` with Podman info, container state, logs, and health endpoint output.
 
-### 5. Tear down the local stack
+### 6. Tear down the local stack
 
 ```bash
 make local-down
 # or: bash deploy/local/scripts/down-local.sh
 ```
+
+### 7. Reset the local stack and volumes
+
+```bash
+make local-reset
+# or: bash deploy/local/scripts/reset-local.sh
+```
+
+Use this when you want a clean local state and do not need to preserve the local PostgreSQL or Qdrant volumes.
 
 ## Check health manually
 
@@ -142,9 +162,10 @@ The local M2 path is acceptable when:
 
 - `memoryd`, PostgreSQL, and Qdrant all come up under `podman compose`;
 - `curl http://127.0.0.1:8787/healthz` returns successfully;
+- `make local-status` reports healthy services;
 - `make local-smoke` returns a recalled item;
 - `make local-debug` works if a container fails;
-- `make local-down` cleanly tears down the stack.
+- `make local-down` and `make local-reset` behave as expected.
 
 ## Troubleshooting
 

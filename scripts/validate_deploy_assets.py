@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 import sys
 from typing import Iterable
@@ -20,16 +21,26 @@ def require(path: Path, errors: list[str]) -> None:
         errors.append(f'missing required path: {path.relative_to(ROOT)}')
 
 
+def require_executable(path: Path, errors: list[str]) -> None:
+    require(path, errors)
+    if path.exists() and not os.access(path, os.X_OK):
+        errors.append(f'path is not executable: {path.relative_to(ROOT)}')
+
+
 def validate_local(errors: list[str]) -> None:
     local_dir = ROOT / 'deploy' / 'local'
     require(local_dir / '.env.example', errors)
     require(local_dir / 'podman-compose.yaml', errors)
-    require(local_dir / 'scripts' / 'bootstrap-podman-m2.sh', errors)
-    require(local_dir / 'scripts' / 'smoke-local.sh', errors)
-    require(local_dir / 'scripts' / 'preflight-podman-m2.sh', errors)
-    require(local_dir / 'scripts' / 'collect-local-debug.sh', errors)
+    require_executable(local_dir / 'scripts' / 'bootstrap-podman-m2.sh', errors)
+    require_executable(local_dir / 'scripts' / 'smoke-local.sh', errors)
+    require_executable(local_dir / 'scripts' / 'preflight-podman-m2.sh', errors)
+    require_executable(local_dir / 'scripts' / 'collect-local-debug.sh', errors)
+    require_executable(local_dir / 'scripts' / 'down-local.sh', errors)
+    require_executable(local_dir / 'scripts' / 'status-local.sh', errors)
+    require_executable(local_dir / 'scripts' / 'reset-local.sh', errors)
     require(ROOT / 'images' / 'memoryd.Dockerfile', errors)
     require(ROOT / 'services' / 'memoryd' / 'requirements.txt', errors)
+    require(ROOT / 'Makefile', errors)
 
     compose_path = local_dir / 'podman-compose.yaml'
     if not compose_path.exists():
