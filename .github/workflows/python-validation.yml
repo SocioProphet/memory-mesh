@@ -1,0 +1,31 @@
+name: python-validation
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  validate-python:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install runtime dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r services/memoryd/requirements.txt
+
+      - name: Compile Python sources
+        run: |
+          python -m py_compile services/memoryd/app/*.py adapters/litellm/*.py scripts/*.py
+
+      - name: Run unit tests
+        run: |
+          python -m unittest discover -s services/memoryd/tests -p 'test_*.py'
