@@ -47,10 +47,25 @@ Set at least:
 
 ## Recommended local sequence
 
+### 0. Operator shortcuts
+
+The repository now includes a root `Makefile` with the main local operator paths:
+
+```bash
+make local-preflight
+make local-up
+make local-smoke
+make local-debug
+make local-down
+```
+
+These commands wrap the scripts below.
+
 ### 1. Preflight the workstation
 
 ```bash
-bash deploy/local/scripts/preflight-podman-m2.sh
+make local-preflight
+# or: bash deploy/local/scripts/preflight-podman-m2.sh
 ```
 
 This checks:
@@ -64,7 +79,8 @@ This checks:
 ### 2. Bootstrap the stack
 
 ```bash
-bash deploy/local/scripts/bootstrap-podman-m2.sh
+make local-up
+# or: bash deploy/local/scripts/bootstrap-podman-m2.sh
 ```
 
 This script:
@@ -78,7 +94,8 @@ This script:
 ### 3. Run the smoke test
 
 ```bash
-bash deploy/local/scripts/smoke-local.sh
+make local-smoke
+# or: bash deploy/local/scripts/smoke-local.sh
 ```
 
 The smoke test writes a memory and then recalls it.
@@ -86,10 +103,18 @@ The smoke test writes a memory and then recalls it.
 ### 4. Collect a debug bundle if bring-up fails
 
 ```bash
-bash deploy/local/scripts/collect-local-debug.sh
+make local-debug
+# or: bash deploy/local/scripts/collect-local-debug.sh
 ```
 
 This writes a timestamped local debug bundle under `.artifacts/local-debug/` with Podman info, container state, logs, and health endpoint output.
+
+### 5. Tear down the local stack
+
+```bash
+make local-down
+# or: bash deploy/local/scripts/down-local.sh
+```
 
 ## Check health manually
 
@@ -117,8 +142,9 @@ The local M2 path is acceptable when:
 
 - `memoryd`, PostgreSQL, and Qdrant all come up under `podman compose`;
 - `curl http://127.0.0.1:8787/healthz` returns successfully;
-- `bash deploy/local/scripts/smoke-local.sh` returns a recalled item;
-- debug collection works if a container fails.
+- `make local-smoke` returns a recalled item;
+- `make local-debug` works if a container fails;
+- `make local-down` cleanly tears down the stack.
 
 ## Troubleshooting
 
