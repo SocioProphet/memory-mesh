@@ -1,0 +1,32 @@
+name: deploy-assets-validation
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  validate-deploy-assets:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install validator dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pyyaml
+
+      - name: Validate shell script syntax
+        run: |
+          bash -n deploy/local/scripts/*.sh
+          bash -n deploy/cloud/scripts/*.sh
+
+      - name: Validate deployment assets
+        run: |
+          python scripts/validate_deploy_assets.py

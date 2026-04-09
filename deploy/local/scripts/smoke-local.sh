@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-ENV_FILE="$ROOT_DIR/deploy/local/.env"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+LOCAL_DIR="$ROOT_DIR/deploy/local"
+ENV_FILE="$LOCAL_DIR/.env"
 
 if [[ -f "$ENV_FILE" ]]; then
   set -a
