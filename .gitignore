@@ -17,3 +17,6 @@ htmlcov/
 *.db
 .qdrant/
 *.log
+.artifacts/
+import-plan.json
+third_party/resolved.upstreams.json
