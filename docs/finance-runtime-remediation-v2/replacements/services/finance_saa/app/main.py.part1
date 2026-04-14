@@ -1,0 +1,125 @@
+from __future__ import annotations
+
+import json
+import os
+from collections import defaultdict
+from typing import Any
+
+from fastapi import FastAPI, Header, HTTPException
+
+from .memory_mesh_client import MemoryMeshClient
+from .models import (
+    AcceptedResponse,
+    AssumptionsSubmitRequest,
+    DecisionPack,
+    DecisionSelectRequest,
+    DecisionSelectResponse,
+    EventEnvelope,
+    PortfolioProposal,
+    ProposalCritiqueRequest,
+    ProposalSubmitRequest,
+    RiskCheckRequest,
+    RiskCheckResponse,
+    SessionStartRequest,
+    SessionStartResponse,
+    VoteRecordRequest,
+    VoteRecordResponse,
+)
+
+
+REQUIRE_API_KEY = os.getenv('FINANCE_SAA_REQUIRE_API_KEY', 'false').lower() in {'1', 'true', 'yes'}
+EXPECTED_API_KEY = os.getenv('FINANCE_SAA_API_KEY', '')
+MEMORYD_SOURCE_OF_TRUTH = os.getenv('FINANCE_SAA_MEMORYD_SOURCE_OF_TRUTH', 'true').lower() in {'1', 'true', 'yes'}
+
+app = FastAPI(title='finance_saa', version='0.3.0')
+
+memoryd = MemoryMeshClient(timeout_seconds=float(os.getenv('FINANCE_SAA_MEMORYD_TIMEOUT_SECONDS', '10')))
+
+_sessions: dict[str, dict[str, Any]] = {}
+_assumptions: dict[str, list[dict[str, Any]]] = defaultdict(list)
+_proposals: dict[str, dict[str, PortfolioProposal]] = defaultdict(dict)
+_critiques: dict[str, list[dict[str, Any]]] = defaultdict(list)
+_votes: dict[str, list[dict[str, Any]]] = defaultdict(list)
+_risk_checks: dict[str, list[dict[str, Any]]] = defaultdict(list)
+_decisions: dict[str, DecisionPack] = {}
+_events: list[EventEnvelope] = []
+_memory_receipts: dict[str, list[dict[str, Any]]] = defaultdict(list)
+
+
+async def require_api_key(x_api_key: str | None) -> None:
+    if not REQUIRE_API_KEY:
+        return
+    if not EXPECTED_API_KEY:
+        raise HTTPException(status_code=500, detail='finance_saa api key enforcement enabled but FINANCE_SAA_API_KEY is empty')
+    if x_api_key != EXPECTED_API_KEY:
+        raise HTTPException(status_code=401, detail='invalid api key')
+
+
+def emit(event_type: str, payload: dict[str, Any]) -> EventEnvelope:
+    event = EventEnvelope(event_type=event_type, payload=payload)
+    _events.append(event)
+    return event
+
+
+def serialize_proposals(session_id: str) -> dict[str, Any]:
+    return {proposal_id: proposal.model_dump() for proposal_id, proposal in _proposals[session_id].items()}
+
+
+def build_session_snapshot(session_id: str) -> dict[str, Any]:
+    decision = _decisions.get(session_id)
+    return {
+        'session': _sessions.get(session_id),
+        'assumptions': list(_assumptions.get(session_id, [])),
+        'proposals': serialize_proposals(session_id),
+        'critiques': list(_critiques.get(session_id, [])),
+        'votes': list(_votes.get(session_id, [])),
+        'risk_checks': list(_risk_checks.get(session_id, [])),
+        'decision': decision.model_dump() if decision is not None else None,
+    }
+
+
+def hydrate_snapshot(session_id: str, snapshot: dict[str, Any]) -> dict[str, Any] | None:
+    session_payload = snapshot.get('session')
+    if not isinstance(session_payload, dict):
+        return None
+    _sessions[session_id] = session_payload
+    _assumptions[session_id] = [item for item in list(snapshot.get('assumptions') or []) if isinstance(item, dict)]
+
+    proposals_payload = snapshot.get('proposals') or {}
+    loaded_proposals: dict[str, PortfolioProposal] = {}
+    if isinstance(proposals_payload, dict):
+        for proposal_id, payload in proposals_payload.items():
+            if isinstance(payload, dict):
+                loaded_proposals[str(proposal_id)] = PortfolioProposal.model_validate(payload)
+    _proposals[session_id] = loaded_proposals
+
+    _critiques[session_id] = [item for item in list(snapshot.get('critiques') or []) if isinstance(item, dict)]
+    _votes[session_id] = [item for item in list(snapshot.get('votes') or []) if isinstance(item, dict)]
+    _risk_checks[session_id] = [item for item in list(snapshot.get('risk_checks') or []) if isinstance(item, dict)]
+
+    decision_payload = snapshot.get('decision')
+    if isinstance(decision_payload, dict):
+        _decisions[session_id] = DecisionPack.model_validate(decision_payload)
+    elif session_id in _decisions:
+        del _decisions[session_id]
+    return session_payload
+
+
+async def persist_artifact(*, artifact_type: str, session_id: str, envelope: dict[str, Any], payload: dict[str, Any], tags: list[str]) -> None:
+    if not memoryd.enabled:
+        return
+    metadata = {
+        'artifact_type': artifact_type,
+        'session_id': session_id,
+        'workload_id': envelope['workload_id'],
+        'run_id': envelope['run_id'],
+        'source_service': 'finance_saa',
+    }
+    receipt = await memoryd.write_artifact(
+        envelope=envelope,
+        content={'artifact_type': artifact_type, 'session_id': session_id, 'payload': payload},
+        memory_class='decision' if artifact_type == 'decision' else 'summary',
+        tags=['finance_saa', artifact_type, *tags],
+        metadata=metadata,
+    )
+    _memory_receipts[session_id].append(receipt)

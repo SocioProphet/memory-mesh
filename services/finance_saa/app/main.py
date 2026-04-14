@@ -29,8 +29,9 @@ from .models import (
 
 REQUIRE_API_KEY = os.getenv('FINANCE_SAA_REQUIRE_API_KEY', 'false').lower() in {'1', 'true', 'yes'}
 EXPECTED_API_KEY = os.getenv('FINANCE_SAA_API_KEY', '')
+MEMORYD_SOURCE_OF_TRUTH = os.getenv('FINANCE_SAA_MEMORYD_SOURCE_OF_TRUTH', 'true').lower() in {'1', 'true', 'yes'}
 
-app = FastAPI(title='finance_saa', version='0.2.0')
+app = FastAPI(title='finance_saa', version='0.3.0')
 
 memoryd = MemoryMeshClient(timeout_seconds=float(os.getenv('FINANCE_SAA_MEMORYD_TIMEOUT_SECONDS', '10')))
 
@@ -39,6 +40,7 @@ _assumptions: dict[str, list[dict[str, Any]]] = defaultdict(list)
 _proposals: dict[str, dict[str, PortfolioProposal]] = defaultdict(dict)
 _critiques: dict[str, list[dict[str, Any]]] = defaultdict(list)
 _votes: dict[str, list[dict[str, Any]]] = defaultdict(list)
+_risk_checks: dict[str, list[dict[str, Any]]] = defaultdict(list)
 _decisions: dict[str, DecisionPack] = {}
 _events: list[EventEnvelope] = []
 _memory_receipts: dict[str, list[dict[str, Any]]] = defaultdict(list)
@@ -59,8 +61,48 @@ def emit(event_type: str, payload: dict[str, Any]) -> EventEnvelope:
     return event
 
 
-def artifact_envelope(payload: dict[str, Any]) -> dict[str, Any]:
-    return payload['envelope']
+def serialize_proposals(session_id: str) -> dict[str, Any]:
+    return {proposal_id: proposal.model_dump() for proposal_id, proposal in _proposals[session_id].items()}
+
+
+def build_session_snapshot(session_id: str) -> dict[str, Any]:
+    decision = _decisions.get(session_id)
+    return {
+        'session': _sessions.get(session_id),
+        'assumptions': list(_assumptions.get(session_id, [])),
+        'proposals': serialize_proposals(session_id),
+        'critiques': list(_critiques.get(session_id, [])),
+        'votes': list(_votes.get(session_id, [])),
+        'risk_checks': list(_risk_checks.get(session_id, [])),
+        'decision': decision.model_dump() if decision is not None else None,
+    }
+
+
+def hydrate_snapshot(session_id: str, snapshot: dict[str, Any]) -> dict[str, Any] | None:
+    session_payload = snapshot.get('session')
+    if not isinstance(session_payload, dict):
+        return None
+    _sessions[session_id] = session_payload
+    _assumptions[session_id] = [item for item in list(snapshot.get('assumptions') or []) if isinstance(item, dict)]
+
+    proposals_payload = snapshot.get('proposals') or {}
+    loaded_proposals: dict[str, PortfolioProposal] = {}
+    if isinstance(proposals_payload, dict):
+        for proposal_id, payload in proposals_payload.items():
+            if isinstance(payload, dict):
+                loaded_proposals[str(proposal_id)] = PortfolioProposal.model_validate(payload)
+    _proposals[session_id] = loaded_proposals
+
+    _critiques[session_id] = [item for item in list(snapshot.get('critiques') or []) if isinstance(item, dict)]
+    _votes[session_id] = [item for item in list(snapshot.get('votes') or []) if isinstance(item, dict)]
+    _risk_checks[session_id] = [item for item in list(snapshot.get('risk_checks') or []) if isinstance(item, dict)]
+
+    decision_payload = snapshot.get('decision')
+    if isinstance(decision_payload, dict):
+        _decisions[session_id] = DecisionPack.model_validate(decision_payload)
+    elif session_id in _decisions:
+        del _decisions[session_id]
+    return session_payload
 
 
 async def persist_artifact(*, artifact_type: str, session_id: str, envelope: dict[str, Any], payload: dict[str, Any], tags: list[str]) -> None:
@@ -83,10 +125,23 @@ async def persist_artifact(*, artifact_type: str, session_id: str, envelope: dic
     _memory_receipts[session_id].append(receipt)
 
 
-async def recover_session_from_memory(envelope: dict[str, Any], session_id: str) -> dict[str, Any] | None:
+async def persist_session_snapshot(session_id: str, envelope: dict[str, Any]) -> None:
+    if not memoryd.enabled:
+        return
+    snapshot = build_session_snapshot(session_id)
+    await persist_artifact(
+        artifact_type='session_snapshot',
+        session_id=session_id,
+        envelope=envelope,
+        payload=snapshot,
+        tags=['session_snapshot', session_id],
+    )
+
+
+async def recover_snapshot_from_memory(envelope: dict[str, Any], session_id: str) -> dict[str, Any] | None:
     if not memoryd.enabled:
         return None
-    recalled = await memoryd.recall(envelope=envelope, query=session_id, top_k=10)
+    recalled = await memoryd.recall(envelope=envelope, query=f'{session_id} session_snapshot', top_k=20)
     hits = list(recalled.get('hits') or [])
     for hit in hits:
         text = hit.get('text')
@@ -98,21 +153,24 @@ async def recover_session_from_memory(envelope: dict[str, Any], session_id: str)
             continue
         if not isinstance(payload, dict):
             continue
-        if payload.get('artifact_type') == 'session' and payload.get('session_id') == session_id:
-            session_payload = payload.get('payload') or {}
-            if isinstance(session_payload, dict):
-                _sessions[session_id] = session_payload
-                return session_payload
+        if payload.get('artifact_type') == 'session_snapshot' and payload.get('session_id') == session_id:
+            snapshot_payload = payload.get('payload') or {}
+            if isinstance(snapshot_payload, dict):
+                hydrate_snapshot(session_id, snapshot_payload)
+                return snapshot_payload
     return None
 
 
 async def require_session(session_id: str, envelope: dict[str, Any]) -> dict[str, Any]:
+    if MEMORYD_SOURCE_OF_TRUTH and memoryd.enabled:
+        snapshot = await recover_snapshot_from_memory(envelope, session_id)
+        if snapshot is not None:
+            session_payload = snapshot.get('session')
+            if isinstance(session_payload, dict):
+                return session_payload
     session = _sessions.get(session_id)
     if session is not None:
         return session
-    recovered = await recover_session_from_memory(envelope, session_id)
-    if recovered is not None:
-        return recovered
     raise HTTPException(status_code=404, detail='session not found')
 
 
@@ -124,6 +182,7 @@ async def root() -> dict[str, Any]:
         'session_count': len(_sessions),
         'decision_count': len(_decisions),
         'memoryd_enabled': memoryd.enabled,
+        'memoryd_source_of_truth': MEMORYD_SOURCE_OF_TRUTH,
     }
 
 
@@ -135,6 +194,7 @@ async def healthz() -> dict[str, Any]:
         'proposal_count': sum(len(items) for items in _proposals.values()),
         'event_count': len(_events),
         'memoryd_enabled': memoryd.enabled,
+        'memoryd_source_of_truth': MEMORYD_SOURCE_OF_TRUTH,
     }
 
 
@@ -167,6 +227,7 @@ async def session_start(request: SessionStartRequest, x_api_key: str | None = He
         payload=session_payload,
         tags=['session', request.context.mandate_id],
     )
+    await persist_session_snapshot(session_id, envelope)
     return SessionStartResponse(session_id=session_id, run_id=request.envelope.run_id, event_id=event.event_id)
 
 
@@ -192,6 +253,7 @@ async def assumptions_submit(request: AssumptionsSubmitRequest, x_api_key: str |
         payload=assumption_payload,
         tags=['assumption', request.assumption_set.role],
     )
+    await persist_session_snapshot(request.session_id, envelope)
     return AcceptedResponse(accepted=True, event_id=event.event_id)
 
 
@@ -217,6 +279,7 @@ async def proposal_submit(request: ProposalSubmitRequest, x_api_key: str | None 
         payload=proposal_payload,
         tags=['proposal', request.proposal.method_id],
     )
+    await persist_session_snapshot(request.session_id, envelope)
     return AcceptedResponse(accepted=True, event_id=event.event_id)
 
 
@@ -245,6 +308,7 @@ async def proposal_critique(request: ProposalCritiqueRequest, x_api_key: str | N
         payload=critique_payload,
         tags=['critique', request.critique.reviewer_role],
     )
+    await persist_session_snapshot(request.session_id, envelope)
     return AcceptedResponse(accepted=True, event_id=event.event_id)
 
 
@@ -267,6 +331,7 @@ async def risk_check(request: RiskCheckRequest, x_api_key: str | None = Header(d
         'findings': findings,
         'scenario_set_id': request.scenario_set_id,
     }
+    _risk_checks[request.session_id].append(risk_payload)
     event = emit(
         'finance.risk.checked',
         {
@@ -283,6 +348,7 @@ async def risk_check(request: RiskCheckRequest, x_api_key: str | None = Header(d
         payload=risk_payload,
         tags=['risk_check', 'passed' if passed else 'failed'],
     )
+    await persist_session_snapshot(request.session_id, envelope)
     return RiskCheckResponse(passed=passed, findings=findings, event_id=event.event_id)
 
 
@@ -313,6 +379,7 @@ async def vote_record(request: VoteRecordRequest, x_api_key: str | None = Header
         payload={'ballot': ballot_payload, 'tally_state': tally_state},
         tags=['vote', request.ballot.voter_role],
     )
+    await persist_session_snapshot(request.session_id, envelope)
     return VoteRecordResponse(accepted=True, tally_state=tally_state, event_id=event.event_id)
 
 
@@ -355,4 +422,5 @@ async def decision_select(request: DecisionSelectRequest, x_api_key: str | None 
         payload=decision.model_dump(),
         tags=['decision', session['context']['mandate_id']],
     )
+    await persist_session_snapshot(request.session_id, envelope)
     return DecisionSelectResponse(decision_pack=decision, event_id=event.event_id)

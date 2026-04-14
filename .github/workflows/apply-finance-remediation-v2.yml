@@ -1,0 +1,43 @@
+name: apply-finance-remediation-v2
+
+on:
+  push:
+    branches:
+      - spec/memory-mesh-and-finance-saa-v1
+    paths:
+      - docs/finance-runtime-remediation-v2/**
+      - .github/workflows/apply-finance-remediation-v2.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Stitch finance_saa main replacement and apply files
+        run: |
+          mkdir -p services/finance_saa/app
+          cat \
+            docs/finance-runtime-remediation-v2/replacements/services/finance_saa/app/main.py.part1 \
+            docs/finance-runtime-remediation-v2/replacements/services/finance_saa/app/main.py.part2 \
+            docs/finance-runtime-remediation-v2/replacements/services/finance_saa/app/main.py.part3 \
+            > services/finance_saa/app/main.py
+
+      - name: Commit applied finance v2 remediation
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add services/finance_saa/app/main.py
+          if git diff --cached --quiet; then
+            echo "No live finance v2 changes to apply"
+            exit 0
+          fi
+          git commit -m "Apply finance_saa source-of-truth remediation bundle"
+          git push
