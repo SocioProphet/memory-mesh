@@ -25,7 +25,7 @@ from .models import (
 from .postgres_store import PostgresStore
 from .qdrant_index import QdrantMemoryIndex
 from .sqlite_store import SQLiteStore
-from .store import InMemoryStore, StoreProtocol, rank_hits_by_policy
+from .store import InMemoryStore, StoreProtocol, dedupe_hits, rank_hits_by_policy
 
 
 REQUIRE_API_KEY = os.getenv('MEMORYD_REQUIRE_API_KEY', 'false').lower() in {'1', 'true', 'yes'}
@@ -173,12 +173,13 @@ async def recall(request: RecallRequest, x_api_key: str | None = Header(default=
         except Exception as exc:  # pragma: no cover
             await store.append_event('backend.recall.error', {'error': str(exc), 'query': request.query})
 
-    merged = rank_hits_by_policy(
-        local_hits + backend_hits,
+    merged = dedupe_hits(local_hits + backend_hits)
+    ranked = rank_hits_by_policy(
+        merged,
         scope_order=compiled.recall_scope_order,
         local_first=compiled.local_first,
     )
-    return RecallResponse(query=request.query, hits=merged[: min(request.top_k, compiled.recall_top_k_limit)], compiled_policy=dump_model(compiled))
+    return RecallResponse(query=request.query, hits=ranked[: min(request.top_k, compiled.recall_top_k_limit)], compiled_policy=dump_model(compiled))
 
 
 @app.post('/v1/write', response_model=WriteResponse)
