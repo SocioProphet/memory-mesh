@@ -2,7 +2,17 @@ import { Type } from "@sinclair/typebox";
 import { definePluginEntry } from "openclaw/plugin-sdk/plugin-entry";
 
 import { resolvePluginConfig } from "./src/config.ts";
-import { MemoryMeshClient, type ScopeEnvelope } from "./src/memoryMeshClient.ts";
+import { EdgeMemoryStore } from "./src/edgeMemoryStore.ts";
+import {
+  MemoryMeshClient,
+  type CompiledWorkloadConfig,
+  type MemoryHit,
+  type RecallResponse,
+  type ScopeEnvelope,
+  type WriteResponse,
+} from "./src/memoryMeshClient.ts";
+
+const DEFAULT_SCOPE_ORDER = ["thread", "channel", "workspace", "run", "agent", "user"];
 
 function safeString(value: unknown, fallback: string): string {
   return typeof value === "string" && value.length > 0 ? value : fallback;
@@ -25,6 +35,63 @@ function buildEnvelope(pluginConfig: ReturnType<typeof resolvePluginConfig>, api
   };
 }
 
+function buildScopeOrder(scopeOrder?: string[]): string[] {
+  const ordered = [...DEFAULT_SCOPE_ORDER];
+  for (const item of scopeOrder ?? []) {
+    if (item && !ordered.includes(item)) {
+      ordered.push(item);
+    }
+  }
+  return ordered;
+}
+
+function scopeRank(scopeName: string, scopeOrder: string[]): number {
+  const idx = scopeOrder.indexOf(scopeName);
+  if (idx < 0) {
+    return 0;
+  }
+  return scopeOrder.length - idx;
+}
+
+function sourceRank(source: string, localFirst: boolean): number {
+  if (!localFirst) {
+    return 0;
+  }
+  return source.startsWith("edge.") || source.startsWith("memoryd.") ? 1 : 0;
+}
+
+function hitSortKey(hit: MemoryHit, scopeOrder: string[], localFirst: boolean): [number, number, number] {
+  return [sourceRank(hit.source, localFirst), scopeRank(hit.scope, scopeOrder), Number(hit.score ?? 0)];
+}
+
+function compareHits(left: MemoryHit, right: MemoryHit, scopeOrder: string[], localFirst: boolean): number {
+  const leftKey = hitSortKey(left, scopeOrder, localFirst);
+  const rightKey = hitSortKey(right, scopeOrder, localFirst);
+  for (let index = 0; index < leftKey.length; index += 1) {
+    if (leftKey[index] !== rightKey[index]) {
+      return rightKey[index] - leftKey[index];
+    }
+  }
+  return right.text.length - left.text.length;
+}
+
+function mergeHits(edgeHits: MemoryHit[], meshHits: MemoryHit[], scopeOrder: string[], localFirst: boolean, limit: number): MemoryHit[] {
+  const retained = new Map<string, MemoryHit>();
+  const consider = (hit: MemoryHit) => {
+    const key = hit.event_id ?? hit.memory_id ?? `${hit.source}:${hit.text}`;
+    const existing = retained.get(key);
+    if (!existing || compareHits(hit, existing, scopeOrder, localFirst) < 0) {
+      retained.set(key, hit);
+    }
+  };
+  for (const hit of [...edgeHits, ...meshHits]) {
+    consider(hit);
+  }
+  return Array.from(retained.values())
+    .sort((left, right) => compareHits(left, right, scopeOrder, localFirst))
+    .slice(0, limit);
+}
+
 export default definePluginEntry({
   id: "memory-mesh",
   name: "Memory Mesh",
@@ -32,6 +99,10 @@ export default definePluginEntry({
   register(api) {
     const pluginConfig = resolvePluginConfig(api.pluginConfig);
     const client = new MemoryMeshClient(pluginConfig.baseUrl, pluginConfig.apiKey);
+    const edgeStore = new EdgeMemoryStore({
+      enabled: pluginConfig.edgeMemoryEnabled,
+      baseDir: pluginConfig.edgeMemoryDir,
+    });
 
     api.registerTool({
       name: "memory_search",
@@ -47,11 +118,48 @@ export default definePluginEntry({
       }),
       async execute(_toolCallId, params) {
         const envelope = buildEnvelope(pluginConfig, api, params as Record<string, unknown>);
-        const result = await client.recall({
-          envelope,
+        const requestedTopK = typeof (params as any).top_k === "number" ? (params as any).top_k : 5;
+        let compiledPolicy: CompiledWorkloadConfig | null = null;
+        try {
+          compiledPolicy = await client.getCompiledConfig(envelope.workload_id);
+        } catch {
+          compiledPolicy = null;
+        }
+
+        const scopeOrder = buildScopeOrder(compiledPolicy?.recall_scope_order);
+        const limit = Math.min(requestedTopK, compiledPolicy?.recall_top_k_limit ?? requestedTopK);
+        const localFirst = compiledPolicy?.local_first ?? true;
+        const edgeHits = await edgeStore.search(String((params as any).query), envelope, limit, scopeOrder);
+
+        let meshResponse: RecallResponse = {
           query: String((params as any).query),
-          top_k: typeof (params as any).top_k === "number" ? (params as any).top_k : 5,
-        });
+          hits: [],
+          compiled_policy: compiledPolicy,
+        };
+        const shouldQueryMesh = !pluginConfig.edgeMemoryEnabled || !localFirst || edgeHits.length < pluginConfig.localRecallMinHits;
+        if (shouldQueryMesh) {
+          meshResponse = await client.recall({
+            envelope,
+            query: String((params as any).query),
+            top_k: limit,
+            scope_order: scopeOrder,
+          });
+        }
+
+        const mergedHits = mergeHits(edgeHits, Array.isArray(meshResponse.hits) ? meshResponse.hits : [], scopeOrder, localFirst, limit);
+        const result = {
+          query: String((params as any).query),
+          hits: mergedHits,
+          compiled_policy: meshResponse.compiled_policy ?? compiledPolicy,
+          edge: {
+            enabled: pluginConfig.edgeMemoryEnabled,
+            path: edgeStore.baseDir,
+            local_first: localFirst,
+            local_hit_count: edgeHits.length,
+            mesh_requested: shouldQueryMesh,
+            local_recall_min_hits: pluginConfig.localRecallMinHits,
+          },
+        };
         return {
           content: [
             {
@@ -78,18 +186,38 @@ export default definePluginEntry({
       }),
       async execute(_toolCallId, params) {
         const envelope = buildEnvelope(pluginConfig, api, params as Record<string, unknown>);
+        const memoryClass = safeString((params as any).memory_class, pluginConfig.writebackClass);
         const result = await client.write({
           envelope,
           content: String((params as any).content),
-          memoryClass: safeString((params as any).memory_class, pluginConfig.writebackClass),
+          memoryClass,
           metadata: ((params as any).metadata ?? {}) as Record<string, unknown>,
           tags: Array.isArray((params as any).tags) ? ((params as any).tags as string[]) : [],
+        });
+        const writeResponse = result as WriteResponse;
+        const mirrored = await edgeStore.mirrorWrite({
+          envelope,
+          content: String((params as any).content),
+          memoryClass,
+          metadata: ((params as any).metadata ?? {}) as Record<string, unknown>,
+          tags: Array.isArray((params as any).tags) ? ((params as any).tags as string[]) : [],
+          meshEventId: writeResponse.event_id,
         });
         return {
           content: [
             {
               type: "text",
-              text: JSON.stringify(result, null, 2),
+              text: JSON.stringify(
+                {
+                  ...writeResponse,
+                  edge: {
+                    mirrored: mirrored !== null,
+                    path: edgeStore.baseDir,
+                  },
+                },
+                null,
+                2,
+              ),
             },
           ],
         };
