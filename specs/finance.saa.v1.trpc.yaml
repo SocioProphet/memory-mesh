@@ -1,0 +1,217 @@
+apiVersion: tritrpc.socioprophet.io/v1alpha1
+kind: ServiceContract
+metadata:
+  name: finance.saa.v1
+  title: Strategic asset allocation committee contract
+  status: draft
+  owners:
+    - SocioProphet
+  inspired_by:
+    - Self-Driving Portfolio architecture
+spec:
+  purpose: >-
+    Defines the minimal governed finance committee surface that can run on top of
+    memory.mesh.v1. This contract captures the committee mechanics first and defers
+    any self-modifying meta-agent behavior until the base committee flow is replayable,
+    policy-bound, and reviewable.
+  transport:
+    normative:
+      protocol: TriTRPC v1
+      binding: prophet-platform stream binding over unix:// or tcp://
+  lifecycle:
+    phase: p0-domain-pack
+    dependency:
+      - memory.mesh.v1
+  shared_identity:
+    envelope_type: ScopeEnvelope
+    required_context_fields:
+      - mandate_id
+      - workload_id
+      - valuation_date
+      - data_cutoff
+      - benchmark_id
+      - universe_id
+      - ips_resource_keys
+  types:
+    SessionContext:
+      fields:
+        mandate_id: string
+        workload_id: string
+        valuation_date: date
+        data_cutoff: timestamp
+        benchmark_id: string
+        universe_id: string
+        ips_resource_keys: [string]
+    AssumptionSet:
+      fields:
+        assumption_set_id: string
+        role: string
+        asset_class: string?
+        narrative: string
+        values: object
+        evidence_refs: [object]
+    PortfolioProposal:
+      fields:
+        proposal_id: string
+        method_id: string
+        weights:
+          - asset_id: string
+            weight: float
+        metrics:
+          expected_return: float
+          expected_volatility: float
+          expected_sharpe: float
+          turnover: float?
+          tracking_error: float?
+        evidence_refs: [object]
+    Critique:
+      fields:
+        critique_id: string
+        proposal_id: string
+        reviewer_role: string
+        disposition:
+          enum:
+            - approve
+            - revise
+            - reject
+        findings: [object]
+        evidence_refs: [object]
+    VoteBallot:
+      fields:
+        ballot_id: string
+        voter_role: string
+        ballot_type:
+          enum:
+            - rank
+            - score
+            - approve_reject
+        rankings: [string]?
+        scores: object?
+        rationale: string
+        evidence_refs: [object]
+    DecisionPack:
+      fields:
+        decision_id: string
+        selected_proposal_id: string
+        rationale: string
+        approval_mode: string
+        metrics: object
+        evidence_refs: [object]
+  methods:
+    - name: Session.Start
+      req:
+        envelope: ScopeEnvelope
+        context: SessionContext
+        notes: string?
+      res:
+        session_id: string
+        run_id: string
+        event_id: string
+    - name: Assumptions.Submit
+      req:
+        envelope: ScopeEnvelope
+        session_id: string
+        assumption_set: AssumptionSet
+      res:
+        accepted: bool
+        event_id: string
+    - name: Proposal.Submit
+      req:
+        envelope: ScopeEnvelope
+        session_id: string
+        proposal: PortfolioProposal
+      res:
+        accepted: bool
+        event_id: string
+    - name: Proposal.Critique
+      req:
+        envelope: ScopeEnvelope
+        session_id: string
+        critique: Critique
+      res:
+        accepted: bool
+        event_id: string
+    - name: Risk.Check
+      req:
+        envelope: ScopeEnvelope
+        session_id: string
+        proposal_id: string
+        scenario_set_id: string?
+      res:
+        passed: bool
+        findings: [object]
+        event_id: string
+    - name: Vote.Record
+      req:
+        envelope: ScopeEnvelope
+        session_id: string
+        ballot: VoteBallot
+      res:
+        accepted: bool
+        tally_state: object
+        event_id: string
+    - name: Decision.Select
+      req:
+        envelope: ScopeEnvelope
+        session_id: string
+        selected_proposal_id: string
+        rationale: string
+      res:
+        decision_pack: DecisionPack
+        event_id: string
+  execution_rules:
+    temporal_integrity:
+      mandatory:
+        - valuation_date must be explicit for each session
+        - data_cutoff must be explicit for each session
+        - recall and evidence retrieval must respect valuation_date and data_cutoff boundaries
+    governance:
+      mandatory:
+        - every session must bind to at least one ips_resource_key
+        - every proposal must carry evidence_refs
+        - every critique and vote must be attributable to a reviewer_role or voter_role
+        - Decision.Select is invalid unless required critiques and votes have been recorded per policy
+    computation_split:
+      mandatory:
+        - numerical optimization and risk math run in deterministic kernels or scripts
+        - language models may generate narrative, interpretation, and critique text but not serve as authoritative numeric source-of-truth
+    meta_improvement:
+      deferred_until:
+        - committee replay and audit are proven
+        - promotion workflow exists for prompt, code, or policy changes
+  events:
+    required_fields:
+      - event_id
+      - event_type
+      - event_version
+      - created_at
+      - workload_id
+      - run_id
+      - mandate_id
+      - valuation_date
+      - data_cutoff
+      - payload
+      - evidence_refs
+    vocabulary:
+      - finance.session.started
+      - finance.assumptions.submitted
+      - finance.proposal.submitted
+      - finance.critique.submitted
+      - finance.risk.checked
+      - finance.vote.recorded
+      - finance.decision.selected
+      - finance.outcome.recorded
+  integration:
+    relies_on:
+      - memory.mesh.v1 for scoped recall, event storage, and policy context
+    intended_resource_extensions:
+      - MandatePolicy
+      - UniversePolicy
+      - BenchmarkPolicy
+      - RiskPolicy
+      - OutputPolicy
+  follow_on:
+    not_in_p0:
+      - researcher-agent method invention
+      - automatic meta-agent prompt or code rewrites
+      - direct self-application of patches without review and promotion

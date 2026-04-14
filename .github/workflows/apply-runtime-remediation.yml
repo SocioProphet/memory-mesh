@@ -1,0 +1,50 @@
+name: apply-runtime-remediation
+
+on:
+  push:
+    branches:
+      - spec/memory-mesh-and-finance-saa-v1
+    paths:
+      - docs/runtime-remediation/replacements/**
+      - docs/runtime-remediation/README.md
+      - .github/workflows/apply-runtime-remediation.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Copy replacement runtime files into live memoryd app
+        run: |
+          mkdir -p services/memoryd/app
+          cp docs/runtime-remediation/replacements/services/memoryd/app/models.py services/memoryd/app/models.py
+          cp docs/runtime-remediation/replacements/services/memoryd/app/store.py services/memoryd/app/store.py
+          cp docs/runtime-remediation/replacements/services/memoryd/app/main.py services/memoryd/app/main.py
+          cp docs/runtime-remediation/replacements/services/memoryd/app/sqlite_store.py services/memoryd/app/sqlite_store.py
+          cp docs/runtime-remediation/replacements/services/memoryd/app/postgres_store.py services/memoryd/app/postgres_store.py
+          cp docs/runtime-remediation/replacements/services/memoryd/app/qdrant_index.py services/memoryd/app/qdrant_index.py
+
+      - name: Commit applied runtime remediation
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add services/memoryd/app/models.py \
+                  services/memoryd/app/store.py \
+                  services/memoryd/app/main.py \
+                  services/memoryd/app/sqlite_store.py \
+                  services/memoryd/app/postgres_store.py \
+                  services/memoryd/app/qdrant_index.py
+          if git diff --cached --quiet; then
+            echo "No live runtime changes to apply"
+            exit 0
+          fi
+          git commit -m "Apply memoryd runtime remediation bundle"
+          git push

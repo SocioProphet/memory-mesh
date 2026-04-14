@@ -53,6 +53,35 @@ class RecallPolicyTests(unittest.TestCase):
         ranked = rank_hits_by_policy(hits, scope_order=['run', 'agent', 'user'], local_first=False)
         self.assertEqual(ranked[0].memory_id, 'backend-run')
 
+    def test_scope_bonus_hard_filters_by_workload_id(self) -> None:
+        request = self.make_request()
+        # Memory tagged to a different workload must be excluded
+        bonus, scope = scope_bonus_for_request(
+            request, {'user_id': 'lord', 'run_id': 'run-1', 'workload_id': 'other-workload'}
+        )
+        self.assertEqual(bonus, -1.0)
+        self.assertEqual(scope, 'none')
+        # Memory tagged to the same workload must not be excluded
+        bonus2, _ = scope_bonus_for_request(
+            request, {'user_id': 'lord', 'run_id': 'run-1', 'workload_id': 'openclaw-gateway'}
+        )
+        self.assertGreater(bonus2, 0)
+        # Memory without a workload_id tag must not be excluded (backward compat)
+        bonus3, _ = scope_bonus_for_request(request, {'user_id': 'lord', 'run_id': 'run-1'})
+        self.assertGreater(bonus3, 0)
+
+    def test_scope_bonus_hard_filters_by_workspace_id_when_both_set(self) -> None:
+        request = self.make_request()
+        # Memory in a different workspace must be excluded when both sides have a workspace_id
+        bonus, scope = scope_bonus_for_request(
+            request, {'user_id': 'lord', 'run_id': 'run-1', 'workspace_id': 'other-workspace'}
+        )
+        self.assertEqual(bonus, -1.0)
+        self.assertEqual(scope, 'none')
+        # Memory without workspace_id must not be excluded (request has workspace, env does not)
+        bonus2, _ = scope_bonus_for_request(request, {'user_id': 'lord', 'run_id': 'run-1'})
+        self.assertGreater(bonus2, 0)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,0 +1,252 @@
+apiVersion: tritrpc.socioprophet.io/v1alpha1
+kind: ServiceContract
+metadata:
+  name: memory.mesh.v1
+  title: Governed memory mesh internal contract
+  status: draft
+  owners:
+    - SocioProphet
+  source_of_truth:
+    - specs/memoryd.openapi.yaml
+    - services/memoryd/app/models.py
+    - services/memoryd/app/main.py
+    - services/memoryd/app/store.py
+spec:
+  purpose: >-
+    Defines the normative internal TriTRPC contract for governed scoped memory,
+    replacing ad hoc internal HTTP usage while retaining the current HTTP/OpenAPI
+    surface as a compatibility edge.
+  transport:
+    normative:
+      protocol: TriTRPC v1
+      binding: prophet-platform stream binding over unix:// or tcp://
+    compatibility_edges:
+      - protocol: HTTP/JSON
+        contract: specs/memoryd.openapi.yaml
+  lifecycle:
+    phase: p0
+    compatibility: additive-to-http-surface
+  identities:
+    envelope_type: ScopeEnvelope
+    required_dimensions:
+      - user_id
+      - agent_id
+      - run_id
+      - workload_id
+      - source_interface
+    optional_dimensions:
+      - workspace_id
+      - channel
+      - thread_id
+      - metadata
+  types:
+    ScopeEnvelope:
+      fields:
+        user_id: string
+        agent_id: string
+        run_id: string
+        workload_id: string
+        workspace_id: string?
+        channel: string?
+        thread_id: string?
+        source_interface: string
+        metadata: object
+    ResourceMetadata:
+      fields:
+        namespace: string
+        name: string
+        labels: object
+        annotations: object
+    MeshResource:
+      fields:
+        apiVersion: string
+        kind:
+          enum:
+            - MemoryAttachment
+            - GlobalRecallPolicy
+            - MemoryPeer
+            - ExportPolicy
+            - ConflictPolicy
+        metadata: ResourceMetadata
+        spec: object
+    MemoryHit:
+      fields:
+        memory_id: string
+        text: string
+        score: float
+        source: string
+        scope: string
+        tags: [string]
+        metadata: object
+        event_id: string?
+    EventRecord:
+      fields:
+        event_id: string
+        event_type: string
+        event_version: string
+        created_at: timestamp
+        workload_id: string
+        run_id: string?
+        workspace_id: string?
+        user_id: string?
+        agent_id: string?
+        payload: object
+        evidence_refs: [object]
+    CompiledWorkloadConfig:
+      fields:
+        workload_id: string
+        recall_scope_order: [string]
+        recall_top_k_limit: int
+        local_first: bool
+        writeback_enabled: bool
+        allow_backend_persistence: bool
+        attachments: [object]
+        peers: [object]
+        export_policies: [object]
+        conflict_policies: [object]
+        config_hash: string
+  methods:
+    - name: Resource.Apply
+      req:
+        envelope: ScopeEnvelope
+        resource: MeshResource
+        dry_run: bool?
+      res:
+        applied: bool
+        resource_key: string
+        event_id: string
+        config_hash: string?
+    - name: Resource.Get
+      req:
+        envelope: ScopeEnvelope
+        kind: string
+        namespace: string
+        name: string
+      res:
+        found: bool
+        resource: MeshResource?
+        event_id: string?
+    - name: Config.Get
+      req:
+        envelope: ScopeEnvelope
+        workload_id: string
+      res:
+        compiled_config: CompiledWorkloadConfig
+        event_id: string
+    - name: Config.Watch
+      mode: stream
+      req:
+        envelope: ScopeEnvelope
+        workload_id: string
+      data:
+        compiled_config: CompiledWorkloadConfig
+        event_id: string
+    - name: Recall
+      req:
+        envelope: ScopeEnvelope
+        query: string
+        top_k: int
+        scope_order: [string]?
+        include_relations: bool
+        include_raw_events: bool
+        filters: object
+        query_vector: [float]?
+      res:
+        query: string
+        hits: [MemoryHit]
+        compiled_policy: CompiledWorkloadConfig
+        local_hit_count: int
+        backend_hit_count: int
+        truncated: bool
+        event_id: string
+    - name: Write
+      req:
+        envelope: ScopeEnvelope
+        content: string
+        memory_class:
+          enum:
+            - interaction
+            - fact
+            - preference
+            - decision
+            - summary
+            - scratch
+        persist_to_backend: bool
+        metadata: object
+        tags: [string]
+        vector: [float]?
+      res:
+        event_id: string
+        memory_id: string?
+        backend_memory_ids: [string]
+        stored_locally: bool
+    - name: Events.List
+      req:
+        envelope: ScopeEnvelope
+        limit: int
+        event_types: [string]?
+        since: timestamp?
+      res:
+        items: [EventRecord]
+        event_id: string?
+  execution_rules:
+    recall:
+      effective_scope_order_resolution:
+        - request.scope_order
+        - compiled_workload_config.recall_scope_order
+        - [run, agent, user]
+      hard_filters:
+        lexical:
+          - workload_id equality is mandatory
+          - workspace_id equality is mandatory when present on the request envelope
+        vector:
+          - workload_id equality is mandatory
+          - workspace_id equality is mandatory when present on the request envelope
+      mandatory_enforcement:
+        - local_first must alter execution order
+        - recall_top_k_limit must cap results even if request.top_k is larger
+        - include_raw_events requires explicit allow policy
+        - include_relations requires explicit allow policy
+        - export_policies and conflict_policies are active decision inputs, not passive annotations
+    write:
+      mandatory_enforcement:
+        - deny when compiled_workload_config.writeback_enabled is false
+        - force persist_to_backend false when compiled_workload_config.allow_backend_persistence is false
+        - emit a typed write.accepted or write.rejected event
+    resource_apply:
+      mandatory_enforcement:
+        - config recompile must occur for affected workload targets
+        - emit resource.applied and config.compiled when effective policy changes
+  events:
+    required_fields:
+      - event_id
+      - event_type
+      - event_version
+      - created_at
+      - workload_id
+      - run_id
+      - workspace_id
+      - user_id
+      - agent_id
+      - payload
+      - evidence_refs
+    vocabulary:
+      - memory.resource.applied
+      - memory.config.compiled
+      - memory.recall.started
+      - memory.recall.completed
+      - memory.recall.denied
+      - memory.write.accepted
+      - memory.write.rejected
+      - memory.export.planned
+      - memory.export.denied
+      - memory.conflict.detected
+      - memory.conflict.resolved
+  migration:
+    p0_goals:
+      - preserve HTTP route compatibility
+      - add normative internal TriTRPC contract
+      - align runtime enforcement with compiled config semantics
+    follow_on:
+      - TriTRPC-native event tail stream
+      - stronger capability-scoped auth replacing shared static api keys

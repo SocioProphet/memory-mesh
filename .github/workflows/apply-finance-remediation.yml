@@ -1,0 +1,46 @@
+name: apply-finance-remediation
+
+on:
+  push:
+    branches:
+      - spec/memory-mesh-and-finance-saa-v1
+    paths:
+      - docs/finance-runtime-remediation/replacements/**
+      - docs/finance-runtime-remediation/README.md
+      - .github/workflows/apply-finance-remediation.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Copy replacement finance files into live runtime paths
+        run: |
+          mkdir -p services/finance_saa/app
+          cp docs/finance-runtime-remediation/replacements/services/finance_saa/requirements.txt services/finance_saa/requirements.txt
+          cp docs/finance-runtime-remediation/replacements/services/finance_saa/app/models.py services/finance_saa/app/models.py
+          cp docs/finance-runtime-remediation/replacements/services/finance_saa/app/memory_mesh_client.py services/finance_saa/app/memory_mesh_client.py
+          cp docs/finance-runtime-remediation/replacements/services/finance_saa/app/main.py services/finance_saa/app/main.py
+
+      - name: Commit applied finance remediation
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add services/finance_saa/requirements.txt \
+                  services/finance_saa/app/models.py \
+                  services/finance_saa/app/memory_mesh_client.py \
+                  services/finance_saa/app/main.py
+          if git diff --cached --quiet; then
+            echo "No live finance changes to apply"
+            exit 0
+          fi
+          git commit -m "Apply finance_saa memory integration bundle"
+          git push
