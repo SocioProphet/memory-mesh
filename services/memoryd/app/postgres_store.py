@@ -10,7 +10,7 @@ try:
 except Exception:  # pragma: no cover
     psycopg = None  # type: ignore[assignment]
 
-from .models import EventRecord, MeshResource, MemoryHit, RecallRequest, WriteRequest, dump_model, parse_model
+from .models import EventRecord, MeshResource, MemoryHit, RecallRequest, WriteRequest, dump_model, event_context_from_payload, parse_model
 from .qdrant_index import QdrantMemoryIndex
 from .store import compile_workload_config_from_resources, dedupe_hits, scope_bonus_for_request, token_overlap, tokenize
 
@@ -67,7 +67,8 @@ class PostgresStore:
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
             )
             ''',
-            f'CREATE INDEX IF NOT EXISTS idx_{self.schema}_memories_user_id ON {self.schema}.memories ((envelope->>\'user_id\'))',
+            f"CREATE INDEX IF NOT EXISTS idx_{self.schema}_memories_user_id ON {self.schema}.memories ((envelope->>'user_id'))",
+            f"CREATE INDEX IF NOT EXISTS idx_{self.schema}_memories_workload_id ON {self.schema}.memories ((envelope->>'workload_id'))",
         ]
         with self._connect() as conn:
             with conn.cursor() as cur:
@@ -117,7 +118,7 @@ class PostgresStore:
         return await asyncio.to_thread(self._append_event_sync, event_type, payload)
 
     def _append_event_sync(self, event_type: str, payload: dict) -> EventRecord:
-        event = EventRecord(event_type=event_type, payload=payload)
+        event = EventRecord(event_type=event_type, payload=payload, **event_context_from_payload(payload))
         with self._connect() as conn:
             with conn.cursor() as cur:
                 cur.execute(
@@ -138,7 +139,19 @@ class PostgresStore:
                     (limit,),
                 )
                 rows = cur.fetchall()
-        return [EventRecord(event_id=row[0], event_type=row[1], payload=row[2], created_at=row[3]) for row in rows]
+        events: list[EventRecord] = []
+        for row in rows:
+            payload = row[2]
+            events.append(
+                EventRecord(
+                    event_id=row[0],
+                    event_type=row[1],
+                    payload=payload,
+                    created_at=row[3],
+                    **event_context_from_payload(payload),
+                )
+            )
+        return events
 
     async def compile_workload_config(self, workload_id: str):
         return await asyncio.to_thread(self._compile_workload_config_sync, workload_id)
@@ -186,18 +199,34 @@ class PostgresStore:
         return merged[: request.top_k]
 
     def _search_lexical_sync(self, request: RecallRequest) -> list[MemoryHit]:
+        limit = max(request.top_k * 20, 100)
         with self._connect() as conn:
             with conn.cursor() as cur:
-                cur.execute(
-                    f'''
-                    SELECT memory_id, text_content, tags, metadata, event_id, envelope
-                    FROM {self.schema}.memories
-                    WHERE (envelope->>'user_id') = %s
-                    ORDER BY created_at DESC
-                    LIMIT %s
-                    ''',
-                    (request.envelope.user_id, max(request.top_k * 20, 100)),
-                )
+                if request.envelope.workspace_id is None:
+                    cur.execute(
+                        f'''
+                        SELECT memory_id, text_content, tags, metadata, event_id, envelope
+                        FROM {self.schema}.memories
+                        WHERE (envelope->>'user_id') = %s
+                          AND (envelope->>'workload_id') = %s
+                        ORDER BY created_at DESC
+                        LIMIT %s
+                        ''',
+                        (request.envelope.user_id, request.envelope.workload_id, limit),
+                    )
+                else:
+                    cur.execute(
+                        f'''
+                        SELECT memory_id, text_content, tags, metadata, event_id, envelope
+                        FROM {self.schema}.memories
+                        WHERE (envelope->>'user_id') = %s
+                          AND (envelope->>'workload_id') = %s
+                          AND (envelope->>'workspace_id') = %s
+                        ORDER BY created_at DESC
+                        LIMIT %s
+                        ''',
+                        (request.envelope.user_id, request.envelope.workload_id, request.envelope.workspace_id, limit),
+                    )
                 rows = cur.fetchall()
         query_tokens = tokenize(request.query)
         hits: list[MemoryHit] = []

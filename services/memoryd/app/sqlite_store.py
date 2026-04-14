@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
-from .models import EventRecord, MeshResource, MemoryHit, RecallRequest, WriteRequest, dump_model, parse_model
+from .models import EventRecord, MeshResource, MemoryHit, RecallRequest, WriteRequest, dump_model, event_context_from_payload, parse_model
 from .qdrant_index import QdrantMemoryIndex
 from .store import compile_workload_config_from_resources, dedupe_hits, scope_bonus_for_request, token_overlap, tokenize
 
@@ -103,7 +103,7 @@ class SQLiteStore:
         return await asyncio.to_thread(self._append_event_sync, event_type, payload)
 
     def _append_event_sync(self, event_type: str, payload: dict) -> EventRecord:
-        event = EventRecord(event_type=event_type, payload=payload)
+        event = EventRecord(event_type=event_type, payload=payload, **event_context_from_payload(payload))
         with self._connect() as conn:
             conn.execute(
                 'INSERT INTO events(event_id, event_type, payload_json, created_at) VALUES (?, ?, ?, ?)',
@@ -123,12 +123,14 @@ class SQLiteStore:
             ).fetchall()
         events: list[EventRecord] = []
         for row in rows:
+            payload = json.loads(row['payload_json'])
             events.append(
                 EventRecord(
                     event_id=row['event_id'],
                     event_type=row['event_type'],
-                    payload=json.loads(row['payload_json']),
+                    payload=payload,
                     created_at=row['created_at'],
+                    **event_context_from_payload(payload),
                 )
             )
         return events
@@ -206,8 +208,8 @@ class SQLiteStore:
             )
         return hits
 
-    async def health(self) -> dict[str, Any]:
-        status: dict[str, Any] = {'backend': 'sqlite', 'path': self.db_path}
+    async def health(self) -> dict:
+        status: dict = {'backend': 'sqlite', 'path': self.db_path}
         try:
             with self._connect() as conn:
                 row = conn.execute('SELECT COUNT(*) AS count FROM events').fetchone()

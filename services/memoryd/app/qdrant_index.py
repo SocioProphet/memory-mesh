@@ -5,6 +5,7 @@ from typing import Any
 import httpx
 
 from .models import MemoryHit, RecallRequest, WriteRequest
+from .store import scope_bonus_for_request
 
 
 class QdrantMemoryIndex:
@@ -61,6 +62,7 @@ class QdrantMemoryIndex:
             'user_id': request.envelope.user_id,
             'agent_id': request.envelope.agent_id,
             'run_id': request.envelope.run_id,
+            'workload_id': request.envelope.workload_id,
             'workspace_id': request.envelope.workspace_id,
             'source_interface': request.envelope.source_interface,
         }
@@ -78,18 +80,18 @@ class QdrantMemoryIndex:
         if not self.enabled or not request.query_vector:
             return []
         await self.ensure_collection()
+        must_filters: list[dict[str, Any]] = [
+            {'key': 'user_id', 'match': {'value': request.envelope.user_id}},
+            {'key': 'workload_id', 'match': {'value': request.envelope.workload_id}},
+        ]
+        if request.envelope.workspace_id is not None:
+            must_filters.append({'key': 'workspace_id', 'match': {'value': request.envelope.workspace_id}})
+
         body: dict[str, Any] = {
             'query': request.query_vector,
             'limit': request.top_k,
             'with_payload': True,
-            'filter': {
-                'must': [
-                    {
-                        'key': 'user_id',
-                        'match': {'value': request.envelope.user_id},
-                    }
-                ]
-            },
+            'filter': {'must': must_filters},
         }
         async with httpx.AsyncClient(timeout=self.timeout_seconds) as client:
             response = await client.post(
@@ -112,15 +114,10 @@ class QdrantMemoryIndex:
                 continue
             payload: dict[str, Any] = dict(item.get('payload') or {})
             envelope = payload.get('envelope') or {}
-            scope_name = 'user'
-            scope_bonus = 0.0
-            if envelope.get('run_id') == request.envelope.run_id:
-                scope_name = 'run'
-                scope_bonus = 0.03
-            elif envelope.get('agent_id') == request.envelope.agent_id and envelope.get('user_id') == request.envelope.user_id:
-                scope_name = 'agent'
-                scope_bonus = 0.02
-            score = float(item.get('score') or 0.0) + scope_bonus
+            scope_bonus, scope_name = scope_bonus_for_request(request, envelope)
+            if scope_bonus < 0:
+                continue
+            score = float(item.get('score') or 0.0) + (scope_bonus / 100.0)
             hits.append(
                 MemoryHit(
                     memory_id=str(item.get('id')),

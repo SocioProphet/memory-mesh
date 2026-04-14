@@ -1,10 +1,21 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Iterable, Protocol
+from typing import Any, Iterable, Protocol
 from uuid import uuid4
 
-from .models import CompiledWorkloadConfig, EventRecord, MemoryHit, MeshResource, RecallRequest, WriteRequest, dump_model
+from .models import (
+    DEFAULT_SCOPE_ORDER,
+    CompiledWorkloadConfig,
+    EventRecord,
+    MemoryHit,
+    MeshResource,
+    RecallRequest,
+    WriteRequest,
+    dump_model,
+    event_context_from_payload,
+    stable_object_hash,
+)
 
 
 class StoreProtocol(Protocol):
@@ -47,7 +58,7 @@ class InMemoryStore:
         return self._resources.get(self.resource_key(kind, namespace, name))
 
     async def append_event(self, event_type: str, payload: dict) -> EventRecord:
-        event = EventRecord(event_type=event_type, payload=payload)
+        event = EventRecord(event_type=event_type, payload=payload, **event_context_from_payload(payload))
         self._events.append(event)
         return event
 
@@ -108,11 +119,11 @@ class InMemoryStore:
 
 
 def compile_workload_config_from_resources(resources: Iterable[MeshResource], *, workload_id: str) -> CompiledWorkloadConfig:
-    attachments: list[dict] = []
-    peers: list[dict] = []
-    export_policies: list[dict] = []
-    conflict_policies: list[dict] = []
-    recall_scope_order = ['run', 'agent', 'user']
+    attachments: list[dict[str, Any]] = []
+    peers: list[dict[str, Any]] = []
+    export_policies: list[dict[str, Any]] = []
+    conflict_policies: list[dict[str, Any]] = []
+    recall_scope_order = list(DEFAULT_SCOPE_ORDER)
     recall_top_k_limit = 10
     local_first = True
     writeback_enabled = True
@@ -146,7 +157,7 @@ def compile_workload_config_from_resources(resources: Iterable[MeshResource], *,
             writeback_enabled = bool(spec.get('writebackEnabled', spec.get('writeback_enabled', writeback_enabled)))
             allow_backend_persistence = bool(spec.get('allowBackendPersistence', spec.get('allow_backend_persistence', allow_backend_persistence)))
 
-    return CompiledWorkloadConfig(
+    compiled = CompiledWorkloadConfig(
         workload_id=workload_id,
         recall_scope_order=recall_scope_order,
         recall_top_k_limit=recall_top_k_limit,
@@ -158,6 +169,10 @@ def compile_workload_config_from_resources(resources: Iterable[MeshResource], *,
         export_policies=export_policies,
         conflict_policies=conflict_policies,
     )
+    payload = dump_model(compiled)
+    payload.pop('config_hash', None)
+    compiled.config_hash = stable_object_hash(payload)
+    return compiled
 
 
 def tokenize(text: str) -> set[str]:
@@ -172,12 +187,25 @@ def token_overlap(query_tokens: set[str], text_tokens: set[str]) -> float:
 
 def scope_bonus_for_request(request: RecallRequest, env: dict) -> tuple[float, str]:
     req = request.envelope
-    if env.get('run_id') == req.run_id:
-        return 3.0, 'run'
-    if env.get('agent_id') == req.agent_id and env.get('user_id') == req.user_id:
-        return 2.0, 'agent'
-    if env.get('user_id') == req.user_id:
-        return 1.0, 'user'
+    if env.get('workload_id') != req.workload_id:
+        return -1.0, 'none'
+    if req.workspace_id is not None and env.get('workspace_id') != req.workspace_id:
+        return -1.0, 'none'
+    if env.get('user_id') != req.user_id:
+        return -1.0, 'none'
+
+    matches = {
+        'run': env.get('run_id') == req.run_id,
+        'agent': env.get('agent_id') == req.agent_id and env.get('user_id') == req.user_id,
+        'user': env.get('user_id') == req.user_id,
+        'workspace': req.workspace_id is not None and env.get('workspace_id') == req.workspace_id,
+        'workload': env.get('workload_id') == req.workload_id,
+    }
+    scope_order = request.scope_order or list(DEFAULT_SCOPE_ORDER)
+    max_bonus = float(len(scope_order) + 1)
+    for idx, scope_name in enumerate(scope_order):
+        if matches.get(scope_name, False):
+            return max_bonus - float(idx), scope_name
     return -1.0, 'none'
 
 

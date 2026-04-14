@@ -4,7 +4,7 @@ import asyncio
 import json
 import os
 from contextlib import asynccontextmanager
-from typing import AsyncIterator
+from typing import Any, AsyncIterator
 from urllib.parse import urlparse
 
 from fastapi import FastAPI, Header, HTTPException
@@ -14,6 +14,7 @@ from .embedding import HashingEmbedder
 from .mem0_client import Mem0RestClient
 from .models import (
     ApplyResourceResponse,
+    DEFAULT_SCOPE_ORDER,
     CompiledWorkloadConfig,
     MeshResource,
     RecallRequest,
@@ -102,6 +103,50 @@ def ensure_write_vector(request: WriteRequest) -> WriteRequest:
     return request
 
 
+def model_fields_set(model: Any) -> set[str]:
+    fields_set = getattr(model, 'model_fields_set', None)
+    if fields_set is None:
+        fields_set = getattr(model, '__fields_set__', set())
+    return set(fields_set)
+
+
+def resolve_scope_order(request: RecallRequest, compiled: CompiledWorkloadConfig) -> list[str]:
+    if 'scope_order' in model_fields_set(request) and request.scope_order:
+        return list(request.scope_order)
+    if compiled.recall_scope_order:
+        return list(compiled.recall_scope_order)
+    return list(DEFAULT_SCOPE_ORDER)
+
+
+def iter_policy_maps(compiled: CompiledWorkloadConfig):
+    for resource in compiled.attachments + compiled.export_policies + compiled.conflict_policies + compiled.peers:
+        if not isinstance(resource, dict):
+            continue
+        spec = resource.get('spec') or {}
+        if isinstance(spec, dict):
+            yield spec
+            nested = spec.get('policy')
+            if isinstance(nested, dict):
+                yield nested
+
+
+def policy_flag(compiled: CompiledWorkloadConfig, names: tuple[str, ...], default: bool = False) -> bool:
+    for policy in iter_policy_maps(compiled):
+        for name in names:
+            if name in policy:
+                return bool(policy[name])
+    return default
+
+
+def infer_target_workloads(resource: MeshResource) -> list[str]:
+    spec = resource.spec or {}
+    targets: set[str] = set(spec.get('targetWorkloads') or spec.get('workloadIds') or [])
+    workload_id = spec.get('workloadId')
+    if isinstance(workload_id, str) and workload_id:
+        targets.add(workload_id)
+    return sorted(targets)
+
+
 @app.get('/')
 async def root() -> dict:
     return {
@@ -126,8 +171,19 @@ async def healthz() -> dict:
 async def apply_resource(resource: MeshResource, x_api_key: str | None = Header(default=None)) -> ApplyResourceResponse:
     await require_api_key(x_api_key)
     key = await store.apply_resource(resource)
-    await store.append_event('resource.applied', {'resource': dump_model(resource)})
-    return ApplyResourceResponse(applied=True, resource_key=key)
+    event = await store.append_event('memory.resource.applied', {'resource': dump_model(resource), 'resource_key': key})
+
+    config_hash: str | None = None
+    target_workloads = infer_target_workloads(resource)
+    if len(target_workloads) == 1:
+        compiled = await store.compile_workload_config(workload_id=target_workloads[0])
+        config_hash = compiled.config_hash
+        await store.append_event(
+            'memory.config.compiled',
+            {'workload_id': target_workloads[0], 'config_hash': config_hash, 'resource_key': key},
+        )
+
+    return ApplyResourceResponse(applied=True, resource_key=key, event_id=event.event_id, config_hash=config_hash)
 
 
 @app.get('/v1/resources/{kind}/{namespace}/{name}')
@@ -164,17 +220,91 @@ async def recall(request: RecallRequest, x_api_key: str | None = Header(default=
     await require_api_key(x_api_key)
     request = ensure_query_vector(request)
     compiled = await store.compile_workload_config(workload_id=request.envelope.workload_id)
+    request.scope_order = resolve_scope_order(request, compiled)
+    request.top_k = min(request.top_k, compiled.recall_top_k_limit)
 
-    local_hits = await store.search_local_memories(request)
+    await store.append_event(
+        'memory.recall.started',
+        {
+            'envelope': dump_model(request.envelope),
+            'query': request.query,
+            'effective_scope_order': list(request.scope_order),
+            'top_k': request.top_k,
+            'config_hash': compiled.config_hash,
+        },
+    )
+
+    if request.include_raw_events and not policy_flag(compiled, ('allowRawEvents', 'allow_raw_events'), default=False):
+        denied_event = await store.append_event(
+            'memory.recall.denied',
+            {
+                'envelope': dump_model(request.envelope),
+                'query': request.query,
+                'reason': 'raw event access denied by policy',
+                'config_hash': compiled.config_hash,
+            },
+        )
+        raise HTTPException(status_code=403, detail=f'raw event access denied by policy ({denied_event.event_id})')
+
+    if request.include_relations and not policy_flag(compiled, ('allowRelations', 'allow_relations'), default=False):
+        denied_event = await store.append_event(
+            'memory.recall.denied',
+            {
+                'envelope': dump_model(request.envelope),
+                'query': request.query,
+                'reason': 'relation access denied by policy',
+                'config_hash': compiled.config_hash,
+            },
+        )
+        raise HTTPException(status_code=403, detail=f'relation access denied by policy ({denied_event.event_id})')
+
+    local_hits = []
     backend_hits = []
-    if mem0.enabled and compiled.allow_backend_persistence:
-        try:
-            backend_hits = await mem0.recall(request)
-        except Exception as exc:  # pragma: no cover
-            await store.append_event('backend.recall.error', {'error': str(exc), 'query': request.query})
+
+    if compiled.local_first:
+        local_hits = await store.search_local_memories(request)
+        if len(local_hits) < request.top_k and mem0.enabled and compiled.allow_backend_persistence:
+            try:
+                backend_hits = await mem0.recall(request)
+            except Exception as exc:  # pragma: no cover
+                await store.append_event(
+                    'backend.recall.error',
+                    {'envelope': dump_model(request.envelope), 'error': str(exc), 'query': request.query},
+                )
+    else:
+        if mem0.enabled and compiled.allow_backend_persistence:
+            try:
+                backend_hits = await mem0.recall(request)
+            except Exception as exc:  # pragma: no cover
+                await store.append_event(
+                    'backend.recall.error',
+                    {'envelope': dump_model(request.envelope), 'error': str(exc), 'query': request.query},
+                )
+        if len(backend_hits) < request.top_k:
+            local_hits = await store.search_local_memories(request)
 
     merged = sorted(local_hits + backend_hits, key=lambda hit: hit.score, reverse=True)
-    return RecallResponse(query=request.query, hits=merged[: min(request.top_k, compiled.recall_top_k_limit)], compiled_policy=dump_model(compiled))
+    final_hits = merged[: request.top_k]
+    completed_event = await store.append_event(
+        'memory.recall.completed',
+        {
+            'envelope': dump_model(request.envelope),
+            'query': request.query,
+            'local_hit_count': len(local_hits),
+            'backend_hit_count': len(backend_hits),
+            'returned_hit_count': len(final_hits),
+            'config_hash': compiled.config_hash,
+        },
+    )
+    return RecallResponse(
+        query=request.query,
+        hits=final_hits,
+        compiled_policy=dump_model(compiled),
+        local_hit_count=len(local_hits),
+        backend_hit_count=len(backend_hits),
+        truncated=len(merged) > len(final_hits),
+        event_id=completed_event.event_id,
+    )
 
 
 @app.post('/v1/write', response_model=WriteResponse)
@@ -183,28 +313,50 @@ async def write(request: WriteRequest, x_api_key: str | None = Header(default=No
     request = ensure_write_vector(request)
     compiled = await store.compile_workload_config(workload_id=request.envelope.workload_id)
     if not compiled.writeback_enabled:
-        raise HTTPException(status_code=403, detail='writeback disabled for workload')
+        rejected_event = await store.append_event(
+            'memory.write.rejected',
+            {
+                'envelope': dump_model(request.envelope),
+                'content': request.content,
+                'memory_class': request.memory_class.value,
+                'metadata': request.metadata,
+                'tags': request.tags,
+                'reason': 'writeback disabled for workload',
+                'config_hash': compiled.config_hash,
+            },
+        )
+        raise HTTPException(status_code=403, detail=f'writeback disabled for workload ({rejected_event.event_id})')
 
     event = await store.append_event(
-        'memory.write',
+        'memory.write.accepted',
         {
             'envelope': dump_model(request.envelope),
             'content': request.content,
             'memory_class': request.memory_class.value,
             'metadata': request.metadata,
             'tags': request.tags,
+            'config_hash': compiled.config_hash,
         },
     )
-    await store.add_local_memory(request=request, event_id=event.event_id)
+    local_memory_id = await store.add_local_memory(request=request, event_id=event.event_id)
 
-    backend_memory_ids = []
-    if request.persist_to_backend and mem0.enabled and compiled.allow_backend_persistence:
+    backend_memory_ids: list[str] = []
+    persist_to_backend = request.persist_to_backend and compiled.allow_backend_persistence
+    if persist_to_backend and mem0.enabled:
         try:
             backend_memory_ids = await mem0.write(request)
         except Exception as exc:  # pragma: no cover
-            await store.append_event('backend.write.error', {'error': str(exc), 'event_id': event.event_id})
+            await store.append_event(
+                'backend.write.error',
+                {'envelope': dump_model(request.envelope), 'error': str(exc), 'event_id': event.event_id},
+            )
 
-    return WriteResponse(event_id=event.event_id, backend_memory_ids=backend_memory_ids, stored_locally=True)
+    return WriteResponse(
+        event_id=event.event_id,
+        memory_id=local_memory_id,
+        backend_memory_ids=backend_memory_ids,
+        stored_locally=True,
+    )
 
 
 @app.get('/v1/events')
