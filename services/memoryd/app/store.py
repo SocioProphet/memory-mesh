@@ -18,6 +18,11 @@ from .models import (
 )
 
 
+DEFAULT_RECALL_SCOPE_ORDER = ['run', 'agent', 'user']
+EXTENDED_RECALL_SCOPE_PREFIX = ['thread', 'channel', 'workspace']
+LOCAL_SOURCE_PREFIXES = ('memoryd.',)
+
+
 class StoreProtocol(Protocol):
     async def init(self) -> None: ...
     async def close(self) -> None: ...
@@ -185,28 +190,64 @@ def token_overlap(query_tokens: set[str], text_tokens: set[str]) -> float:
     return float(len(query_tokens & text_tokens))
 
 
-def scope_bonus_for_request(request: RecallRequest, env: dict) -> tuple[float, str]:
-    req = request.envelope
-    if env.get('workload_id') != req.workload_id:
-        return -1.0, 'none'
-    if req.workspace_id is not None and env.get('workspace_id') != req.workspace_id:
-        return -1.0, 'none'
-    if env.get('user_id') != req.user_id:
-        return -1.0, 'none'
+def build_scope_order(scope_order: list[str] | None) -> list[str]:
+    ordered = list(EXTENDED_RECALL_SCOPE_PREFIX)
+    for item in scope_order or DEFAULT_RECALL_SCOPE_ORDER:
+        if item and item not in ordered:
+            ordered.append(item)
+    for fallback in DEFAULT_RECALL_SCOPE_ORDER:
+        if fallback not in ordered:
+            ordered.append(fallback)
+    return ordered
 
-    matches = {
-        'run': env.get('run_id') == req.run_id,
-        'agent': env.get('agent_id') == req.agent_id and env.get('user_id') == req.user_id,
-        'user': env.get('user_id') == req.user_id,
-        'workspace': req.workspace_id is not None and env.get('workspace_id') == req.workspace_id,
-        'workload': env.get('workload_id') == req.workload_id,
-    }
-    scope_order = request.scope_order or list(DEFAULT_SCOPE_ORDER)
-    max_bonus = float(len(scope_order) + 1)
-    for idx, scope_name in enumerate(scope_order):
-        if matches.get(scope_name, False):
-            return max_bonus - float(idx), scope_name
-    return -1.0, 'none'
+
+def scope_name_for_request(request: RecallRequest, env: dict) -> str:
+    req = request.envelope
+    if env.get('user_id') != req.user_id:
+        return 'none'
+    if req.thread_id and env.get('thread_id') == req.thread_id:
+        return 'thread'
+    if req.channel and env.get('channel') == req.channel:
+        return 'channel'
+    if req.workspace_id and env.get('workspace_id') == req.workspace_id:
+        return 'workspace'
+    if env.get('run_id') == req.run_id:
+        return 'run'
+    if env.get('agent_id') == req.agent_id:
+        return 'agent'
+    return 'user'
+
+
+def scope_rank(scope_name: str, scope_order: list[str] | None) -> int:
+    ordered = build_scope_order(scope_order)
+    if scope_name not in ordered:
+        return 0
+    return len(ordered) - ordered.index(scope_name)
+
+
+def scope_bonus_for_request(request: RecallRequest, env: dict, scope_order: list[str] | None = None) -> tuple[float, str]:
+    req = request.envelope
+    if env.get('workload_id') and env.get('workload_id') != req.workload_id:
+        return -1.0, 'none'
+    if req.workspace_id is not None and env.get('workspace_id') is not None and env.get('workspace_id') != req.workspace_id:
+        return -1.0, 'none'
+    scope_name = scope_name_for_request(request, env)
+    if scope_name == 'none':
+        return -1.0, 'none'
+    return float(scope_rank(scope_name, scope_order or request.scope_order)), scope_name
+
+
+def hit_sort_key(hit: MemoryHit, *, scope_order: list[str] | None, local_first: bool) -> tuple[int, int, float]:
+    local_source_bonus = 1 if local_first and hit.source.startswith(LOCAL_SOURCE_PREFIXES) else 0
+    return local_source_bonus, scope_rank(hit.scope, scope_order), float(hit.score)
+
+
+def rank_hits_by_policy(hits: list[MemoryHit], *, scope_order: list[str] | None, local_first: bool) -> list[MemoryHit]:
+    return sorted(
+        hits,
+        key=lambda hit: hit_sort_key(hit, scope_order=scope_order, local_first=local_first),
+        reverse=True,
+    )
 
 
 def dedupe_hits(hits: list[MemoryHit]) -> list[MemoryHit]:

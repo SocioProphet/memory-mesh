@@ -26,7 +26,7 @@ from .models import (
 from .postgres_store import PostgresStore
 from .qdrant_index import QdrantMemoryIndex
 from .sqlite_store import SQLiteStore
-from .store import InMemoryStore, StoreProtocol
+from .store import InMemoryStore, StoreProtocol, dedupe_hits, rank_hits_by_policy
 
 
 REQUIRE_API_KEY = os.getenv('MEMORYD_REQUIRE_API_KEY', 'false').lower() in {'1', 'true', 'yes'}
@@ -283,8 +283,13 @@ async def recall(request: RecallRequest, x_api_key: str | None = Header(default=
         if len(backend_hits) < request.top_k:
             local_hits = await store.search_local_memories(request)
 
-    merged = sorted(local_hits + backend_hits, key=lambda hit: hit.score, reverse=True)
-    final_hits = merged[: request.top_k]
+    merged = dedupe_hits(local_hits + backend_hits)
+    ranked = rank_hits_by_policy(
+        merged,
+        scope_order=compiled.recall_scope_order,
+        local_first=compiled.local_first,
+    )
+    final_hits = ranked[: min(request.top_k, compiled.recall_top_k_limit)]
     completed_event = await store.append_event(
         'memory.recall.completed',
         {
@@ -302,7 +307,7 @@ async def recall(request: RecallRequest, x_api_key: str | None = Header(default=
         compiled_policy=dump_model(compiled),
         local_hit_count=len(local_hits),
         backend_hit_count=len(backend_hits),
-        truncated=len(merged) > len(final_hits),
+        truncated=len(ranked) > len(final_hits),
         event_id=completed_event.event_id,
     )
 
