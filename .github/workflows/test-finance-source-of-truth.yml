@@ -3,6 +3,7 @@ name: test-finance-source-of-truth
 on:
   push:
     branches:
+      - main
       - test/runtime-source-of-truth
   pull_request:
     branches:
