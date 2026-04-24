@@ -56,7 +56,7 @@ class FinanceSourceOfTruthTests(unittest.IsolatedAsyncioTestCase):
         finance_main._events.clear()
         finance_main._memory_receipts.clear()
         finance_main.MEMORYD_SOURCE_OF_TRUTH = True
-        finance_main.memoryd.enabled = True
+        finance_main.memoryd.base_url = 'http://localhost:8080'
 
     async def test_build_and_hydrate_session_snapshot_round_trip(self) -> None:
         session_id = 'sess-1'
@@ -132,7 +132,7 @@ class FinanceSourceOfTruthTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_require_session_falls_back_to_local_cache_when_memory_disabled(self) -> None:
         session_id = 'sess-3'
-        finance_main.memoryd.enabled = False
+        finance_main.memoryd.base_url = ''
         finance_main._sessions[session_id] = sample_session_payload()
         envelope = sample_session_payload()['envelope']
         recovered = await finance_main.require_session(session_id, envelope)
