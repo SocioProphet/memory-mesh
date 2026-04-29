@@ -1,0 +1,65 @@
+{
+  "schemaVersion": "v0.1",
+  "contextPackId": "context-pack://pi-demo-0001",
+  "workroomRef": "workroom://workroom-demo-0001",
+  "playbookId": "client-opportunity-review",
+  "recallPolicy": {
+    "scope": "workroom-scoped",
+    "writeback": "draft-only",
+    "externalRelease": "approval-required",
+    "trainingUse": "disabled"
+  },
+  "entityRefs": [
+    "entity://organization/org-demo-0001"
+  ],
+  "relationshipRefs": [
+    "relationship://demo/org-demo-0001/internal-sponsor"
+  ],
+  "searchPacketRefs": [
+    "search-packet://pi-demo-0001"
+  ],
+  "policyDecisionRefs": [
+    "policy-decision://ppd-review-0001"
+  ],
+  "obligationRefs": [
+    "obligation://obl-ai-use-demo-0001"
+  ],
+  "allowedAgentRefs": [
+    "agent://professional-intelligence/opportunity-review-agent",
+    "agent://professional-intelligence/relationship-agent"
+  ],
+  "memoryEntries": [
+    {
+      "memoryRef": "memory://pi-demo-0001/fact/source-channel",
+      "kind": "fact",
+      "summary": "The opportunity entered through a controlled demo source channel.",
+      "sourceRef": "search-packet://pi-demo-0001",
+      "sensitivity": "internal",
+      "evidenceRef": "evidence://memory/pi-demo-0001/source-channel"
+    },
+    {
+      "memoryRef": "memory://pi-demo-0001/policy/ai-use",
+      "kind": "policy",
+      "summary": "Generated summaries require approval before release when an AI-use obligation applies.",
+      "sourceRef": "policy-decision://ppd-review-0001",
+      "sensitivity": "internal",
+      "evidenceRef": "evidence://policy/ppd-review-0001"
+    },
+    {
+      "memoryRef": "memory://pi-demo-0001/obligation/approval",
+      "kind": "obligation",
+      "summary": "Release of a review packet requires approval and evidence retention.",
+      "sourceRef": "obligation://obl-approval-demo-0001",
+      "sensitivity": "internal",
+      "evidenceRef": "evidence://obligation/obl-approval-demo-0001"
+    }
+  ],
+  "evidenceRefs": [
+    "evidence://memory/pi-demo-0001/context-pack",
+    "evidence://adoption/adopt-0001"
+  ],
+  "retention": {
+    "class": "demo-evidence",
+    "evidenceRequired": true
+  }
+}

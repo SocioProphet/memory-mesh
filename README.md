@@ -20,6 +20,26 @@ This repository currently includes:
 - importer and validation scripts so upstream resolution happens in one controlled place instead of at runtime;
 - local M2 Mac Podman and Google Cloud review deployment scaffolding.
 
+## Professional Intelligence context packs
+
+Memory Mesh now carries the first scoped context-pack surface for the Professional Intelligence OS Gate 3 demo path.
+
+The context-pack contract and example live at:
+
+- `schemas/professional-intelligence-context-pack.schema.json`
+- `examples/professional-intelligence/context-pack.example.json`
+
+Validate locally:
+
+```bash
+python -m pip install jsonschema
+python scripts/validate_professional_intelligence_context_pack.py
+```
+
+The workflow `.github/workflows/professional-intelligence-context-pack.yml` runs this validation when the context-pack schema, example, validator, or workflow changes.
+
+This context pack is intentionally workroom-scoped. It references the Professional Intelligence demo workroom, allowed agents, policy decision references, obligation references, search packet references, memory entries, and evidence records. It supplies the memory/context input for the Agentplane workflow bundle, Prophet Workspace workroom fixture, Policy Fabric policy decisions, and ContractForge obligations.
+
 ## Repository semantics
 
 This is the canonical public repository for the runtime and deployment work. It is not a disposable starter artifact.

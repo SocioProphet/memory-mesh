@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://socioprophet.io/schemas/memory-mesh/professional-intelligence-context-pack.schema.json",
+  "title": "ProfessionalIntelligenceContextPack",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "contextPackId",
+    "workroomRef",
+    "playbookId",
+    "recallPolicy",
+    "entityRefs",
+    "policyDecisionRefs",
+    "obligationRefs",
+    "allowedAgentRefs",
+    "memoryEntries",
+    "evidenceRefs"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "v0.1" },
+    "contextPackId": { "type": "string", "minLength": 1 },
+    "workroomRef": { "type": "string", "minLength": 1 },
+    "playbookId": { "type": "string", "minLength": 1 },
+    "recallPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scope", "writeback", "externalRelease", "trainingUse"],
+      "properties": {
+        "scope": { "type": "string", "enum": ["workroom-scoped", "session-scoped", "read-only"] },
+        "writeback": { "type": "string", "enum": ["disabled", "draft-only", "enabled"] },
+        "externalRelease": { "type": "string", "enum": ["disabled", "approval-required", "enabled"] },
+        "trainingUse": { "type": "string", "enum": ["disabled", "approval-required"] }
+      }
+    },
+    "entityRefs": { "type": "array", "items": { "type": "string" } },
+    "relationshipRefs": { "type": "array", "items": { "type": "string" } },
+    "searchPacketRefs": { "type": "array", "items": { "type": "string" } },
+    "policyDecisionRefs": { "type": "array", "items": { "type": "string" } },
+    "obligationRefs": { "type": "array", "items": { "type": "string" } },
+    "allowedAgentRefs": { "type": "array", "items": { "type": "string" } },
+    "memoryEntries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["memoryRef", "kind", "summary", "sourceRef", "sensitivity"],
+        "properties": {
+          "memoryRef": { "type": "string", "minLength": 1 },
+          "kind": { "type": "string", "enum": ["fact", "relationship", "policy", "obligation", "workspace-note", "search-result"] },
+          "summary": { "type": "string", "minLength": 1 },
+          "sourceRef": { "type": "string", "minLength": 1 },
+          "sensitivity": { "type": "string", "enum": ["public", "internal", "confidential", "restricted"] },
+          "evidenceRef": { "type": "string" }
+        }
+      }
+    },
+    "evidenceRefs": { "type": "array", "items": { "type": "string" } },
+    "retention": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "class": { "type": "string" },
+        "evidenceRequired": { "type": "boolean" }
+      }
+    }
+  }
+}
