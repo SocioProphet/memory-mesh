@@ -1,0 +1,63 @@
+{
+  "schemaVersion": "v0.1",
+  "memoryProfileRef": "memory-profile://slash-topics/eng-reliability/v0.1",
+  "slashTopicScope": {
+    "topic": "/eng/reliability",
+    "membraneId": "membrane://new-hope/eng-sre-0001",
+    "channelRef": "channel://slack/C0ENG-SRE"
+  },
+  "recallPolicy": {
+    "scope": "slash-topic-scoped",
+    "sensitivePayloadStorage": "disallowed",
+    "topK": 10,
+    "scopeOrder": ["thread", "channel", "workspace"],
+    "includeRelations": false,
+    "includeRawEvents": false
+  },
+  "writebackPolicy": {
+    "enabled": false,
+    "dryRunMode": "no-writeback",
+    "allowedMemoryClasses": ["fact", "summary"]
+  },
+  "retention": {
+    "class": "slash-topic-evidence",
+    "evidenceRequired": true,
+    "ttlDays": 30
+  },
+  "redaction": {
+    "enabled": true,
+    "sensitivityThreshold": "internal",
+    "redactedFields": ["user_email", "pager_duty_key"]
+  },
+  "summarization": {
+    "enabled": true,
+    "maxTokens": 256,
+    "summaryClass": "summary"
+  },
+  "promotion": {
+    "enabled": false,
+    "promotionTargetScope": "workspace",
+    "requiresApproval": true
+  },
+  "forgetting": {
+    "enabled": true,
+    "policy": "ttl-based"
+  },
+  "labProfile": {
+    "embeddingModel": "text-embedding-3-small",
+    "nlpPipeline": "default",
+    "multimodalEnabled": false,
+    "launchLabJobs": false
+  },
+  "dryRun": {
+    "enabled": true,
+    "queryRoutingPlan": {
+      "memoryProfileRef": "memory-profile://slash-topics/eng-reliability/v0.1",
+      "memoryEventRef": "memory-event://dry-run/slash-topics/eng-reliability/evt-dry-0001"
+    }
+  },
+  "evidenceRefs": [
+    "evidence://memory-profile/slash-topics/eng-reliability/v0.1",
+    "evidence://membrane/new-hope/eng-sre-0001"
+  ]
+}

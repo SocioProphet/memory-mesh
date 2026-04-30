@@ -40,6 +40,34 @@ The workflow `.github/workflows/professional-intelligence-context-pack.yml` runs
 
 This context pack is intentionally workroom-scoped. It references the Professional Intelligence demo workroom, allowed agents, policy decision references, obligation references, search packet references, memory entries, and evidence records. It supplies the memory/context input for the Agentplane workflow bundle, Prophet Workspace workroom fixture, Policy Fabric policy decisions, and ContractForge obligations.
 
+## Slash Topic memory profiles
+
+Memory Mesh defines a memory profile contract for Slash Topic scopes that provides the governance envelope for Lattice query routing (Slash Topics scope → New Hope membrane admission → Memory Mesh profile → lab profile selection → physical backend routing).
+
+The contract, example, and spec live at:
+
+- `schemas/slash-topic-memory-profile.schema.json`
+- `examples/slash-topics/memory-profile.example.json`
+- `specs/slash-topic-memory-profile.v1.yaml`
+
+Validate locally:
+
+```bash
+python -m pip install jsonschema
+python scripts/validate_slash_topic_memory_profile.py
+```
+
+The workflow `.github/workflows/slash-topic-memory-profile.yml` runs this validation when the schema, example, validator, spec, or workflow changes.
+
+Key properties of this contract:
+
+- **No raw sensitive payloads stored by default** – `recallPolicy.sensitivePayloadStorage` defaults to `"disallowed"`.
+- **No memory writeback in dry-run mode** – `writebackPolicy.dryRunMode` must be `"no-writeback"` when dry-run is active.
+- **Explicit Lattice mapping** – `dryRun.queryRoutingPlan` carries both `memoryProfileRef` and `memoryEventRef`, matching Lattice `QueryRoutingDryRunPlan` fields.
+- **Lab profile selection without lab jobs** – `labProfile.launchLabJobs` is an invariant `false`; embedding/NLP/multimodal tuning applies at recall time only.
+
+This contract coordinates with the Slash Topics / New Hope consolidation work in SocioProphet/slash-topics issue 19.
+
 ## Repository semantics
 
 This is the canonical public repository for the runtime and deployment work. It is not a disposable starter artifact.
