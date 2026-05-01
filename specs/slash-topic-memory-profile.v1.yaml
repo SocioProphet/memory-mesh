@@ -22,9 +22,8 @@ spec:
     Lattice query routing requires: Slash Topics public query/governance surface,
     New Hope internal membrane/runtime substrate, Memory Mesh profile, lab profile
     selection, and physical backend routing. It also defines dry-run behaviour so
-    query routing can produce memory event, topology role, and evidence references
-    without performing recall or writeback.
-
+    that query routing can produce memory event, topology role, and evidence
+    references without performing any recall or writeback.
   role_model:
     publicSurfaceRef:
       const: slash-topics-public-surface
@@ -38,7 +37,6 @@ spec:
     compatibilityRef:
       const: new-hope-compatibility
       meaning: New Hope compatibility is preserved instead of hidden behind a rename.
-
   transport:
     normative:
       protocol: TriTRPC v1
@@ -46,21 +44,19 @@ spec:
     compatibility_edges:
       - protocol: JSON document
         contract: schemas/slash-topic-memory-profile.schema.json
-
   lifecycle:
     phase: p0-domain-pack
     dependency:
       - memory.mesh.v1
-
   types:
     SlashTopicScope:
       description: >-
         Identifies a Slash Topic and the New Hope membrane that controls
         admission for that topic.
       fields:
-        topic: string
-        membraneId: string
-        channelRef: string?
+        topic: string          # e.g. "/eng/reliability"
+        membraneId: string     # New Hope membrane admission ID
+        channelRef: string?    # optional channel within the scope
 
     TopologyRoles:
       description: >-
@@ -77,13 +73,91 @@ spec:
         compatibilityRef:
           const: new-hope-compatibility
 
+    RecallPolicy:
+      description: >-
+        Controls how memory is recalled within a Slash Topic scope.
+      fields:
+        scope:
+          enum:
+            - slash-topic-scoped
+            - session-scoped
+            - read-only
+        sensitivePayloadStorage:
+          enum:
+            - disallowed           # default; no raw sensitive content stored
+            - summarized-only
+            - allowed-with-redaction
+        topK: int                  # 1–50
+        scopeOrder: [string]?      # ordered scope dimensions for resolution
+        includeRelations: bool     # default false; requires explicit allow policy
+        includeRawEvents: bool     # default false; requires explicit allow policy
+
+    WritebackPolicy:
+      description: >-
+        Controls memory writeback. In dry-run mode this must resolve to
+        no-writeback.
+      fields:
+        enabled: bool
+        dryRunMode:
+          enum:
+            - no-writeback         # required default in dry-run
+            - event-refs-only
+            - summarized-only
+        allowedMemoryClasses: [string]?
+
+    RetentionConfig:
+      fields:
+        class: string
+        evidenceRequired: bool
+        ttlDays: int?
+
+    RedactionConfig:
+      fields:
+        enabled: bool
+        sensitivityThreshold:
+          enum: [public, internal, confidential, restricted]
+        redactedFields: [string]?
+
+    SummarizationConfig:
+      fields:
+        enabled: bool
+        maxTokens: int?
+        summaryClass: string?
+
+    PromotionConfig:
+      fields:
+        enabled: bool
+        promotionTargetScope: string?
+        requiresApproval: bool
+
+    ForgettingConfig:
+      fields:
+        enabled: bool
+        policy:
+          enum:
+            - explicit-delete-only
+            - ttl-based
+            - evidence-driven
+
+    LabProfile:
+      description: >-
+        Tunes embedding, NLP, and multimodal behaviour for this scope.
+        Selecting a lab profile never launches background lab jobs; it
+        configures runtime behaviour only.
+      fields:
+        embeddingModel: string?
+        nlpPipeline: string?
+        multimodalEnabled: bool
+        launchLabJobs:
+          const: false             # invariant; lab jobs are never triggered here
+
     QueryRoutingDryRunPlan:
       description: >-
         Explicit mapping to Lattice QueryRoutingDryRunPlan fields. Produced
         during a dry-run pass without reading or writing memory.
       fields:
-        memoryProfileRef: string
-        memoryEventRef: string
+        memoryProfileRef: string   # stable URI for the active memory profile
+        memoryEventRef: string     # dry-run event ref; no recall or writeback occurs
         publicSurfaceRef:
           const: slash-topics-public-surface
         runtimeSubstrateRef:
@@ -101,7 +175,7 @@ spec:
       fields:
         schemaVersion:
           const: "v0.1"
-        memoryProfileRef: string
+        memoryProfileRef: string   # Maps to QueryRoutingDryRunPlan.memoryProfileRef
         slashTopicScope: SlashTopicScope
         topologyRoles: TopologyRoles
         recallPolicy: RecallPolicy
@@ -116,7 +190,7 @@ spec:
           fields:
             enabled: bool
             queryRoutingPlan: QueryRoutingDryRunPlan?
-        evidenceRefs: string[]
+        evidenceRefs: [string]
 
   execution_rules:
     topology_roles:
@@ -129,31 +203,45 @@ spec:
         - Memory Mesh must attach to Slash Topic scope and must not treat New Hope as the public surface or hide it behind an implicit rename.
     recall:
       mandatory_enforcement:
-        - sensitivePayloadStorage must be 'disallowed' by default; promotion to 'summarized-only' or 'allowed-with-redaction' requires an explicit policy decision reference.
-        - includeRawEvents and includeRelations require explicit allow entries in the compiled workload config.
-        - scopeOrder resolution follows memory.mesh.v1 precedence.
-        - topK must not exceed the memory.mesh.v1 recall_top_k_limit.
+        - sensitivePayloadStorage must be 'disallowed' by default; promotion
+          to 'summarized-only' or 'allowed-with-redaction' requires an
+          explicit policy decision reference
+        - includeRawEvents and includeRelations require explicit allow entries
+          in the compiled workload config
+        - scopeOrder resolution follows the same precedence as memory.mesh.v1
+          (request override → profile → default)
+        - topK must not exceed the memory.mesh.v1 recall_top_k_limit
     writeback:
       mandatory_enforcement:
-        - when dryRun.enabled is true, writebackPolicy.dryRunMode must be 'no-writeback' and no memory entry may be persisted.
-        - when writebackPolicy.enabled is false, all writeback attempts are denied regardless of memory class.
-        - only memory classes listed in writebackPolicy.allowedMemoryClasses may be written when writeback is enabled.
-        - emit memory.write.accepted or memory.write.rejected event for every writeback attempt.
+        - when dryRun.enabled is true, writebackPolicy.dryRunMode must be
+          'no-writeback' and no memory entry may be persisted
+        - when writebackPolicy.enabled is false, all writeback attempts are
+          denied regardless of memory class
+        - only memory classes listed in writebackPolicy.allowedMemoryClasses
+          may be written when writeback is enabled
+        - emit memory.write.accepted or memory.write.rejected event for every
+          writeback attempt
     dry_run:
       mandatory_enforcement:
-        - dry-run pass must produce QueryRoutingDryRunPlan with memoryProfileRef, memoryEventRef, publicSurfaceRef, runtimeSubstrateRef, runtimeAliasRef, and compatibilityRef populated.
-        - no recall call is issued to the backend store during a dry-run pass.
-        - no writeback call is issued during a dry-run pass.
-        - dry-run events are typed memory.dry-run.planned and must carry evidence_refs.
+        - dry-run pass must produce QueryRoutingDryRunPlan with memoryProfileRef,
+          memoryEventRef, publicSurfaceRef, runtimeSubstrateRef, runtimeAliasRef,
+          and compatibilityRef populated
+        - no recall call is issued to the backend store during a dry-run pass
+        - no writeback call is issued during a dry-run pass
+        - dry-run events are typed memory.dry-run.planned and must carry
+          evidence_refs
     lab_profile:
       mandatory_enforcement:
-        - labProfile.launchLabJobs must always be false.
-        - lab profile selection takes effect at recall/embed time; it never triggers a background compute job.
+        - labProfile.launchLabJobs must always be false
+        - lab profile selection takes effect at recall/embed time; it never
+          triggers a background compute job
     retention_and_forgetting:
       mandatory_enforcement:
-        - when retention.evidenceRequired is true, a memory entry without an evidenceRef must be rejected at writeback.
-        - forgetting policy 'explicit-delete-only' suppresses all automatic expiry; an explicit operator action is required to remove entries.
-        - ttl-based forgetting must honour retention.ttlDays.
+        - when retention.evidenceRequired is true, a memory entry without an
+          evidenceRef must be rejected at writeback
+        - forgetting policy 'explicit-delete-only' suppresses all automatic
+          expiry; an explicit operator action is required to remove entries
+        - ttl-based forgetting must honour retention.ttlDays
 
   events:
     required_fields:
@@ -187,8 +275,8 @@ spec:
     description: >-
       When Lattice query routing runs a dry-run pass it must resolve the active
       SlashTopicMemoryProfile for the requested topic scope, set dryRun.enabled
-      to true, and return a QueryRoutingDryRunPlan without reading from or writing
-      to any memory backend.
+      to true, and return a QueryRoutingDryRunPlan without reading from or
+      writing to any memory backend.
     lattice_field_mapping:
       memoryProfileRef: SlashTopicMemoryProfile.memoryProfileRef
       memoryEventRef: SlashTopicMemoryProfile.dryRun.queryRoutingPlan.memoryEventRef
