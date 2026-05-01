@@ -2,267 +2,133 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://socioprophet.io/schemas/memory-mesh/slash-topic-memory-profile.schema.json",
   "title": "SlashTopicMemoryProfile",
-  "description": "Memory Mesh profile contract for Slash Topic scopes. Governs recall, writeback, retention, redaction, summarization, promotion, forgetting, and evidence for a given Slash Topic scope. Also defines dry-run behaviour for Lattice query routing.",
+  "description": "Memory Mesh profile contract for Slash Topic scopes, including explicit Slash Topics/New Hope topology role refs for Lattice query routing.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "schemaVersion",
-    "memoryProfileRef",
-    "slashTopicScope",
-    "recallPolicy",
-    "writebackPolicy",
-    "retention",
-    "evidenceRefs"
-  ],
+  "required": ["schemaVersion", "memoryProfileRef", "slashTopicScope", "topologyRoles", "recallPolicy", "writebackPolicy", "retention", "evidenceRefs"],
   "properties": {
-    "schemaVersion": {
-      "const": "v0.1",
-      "description": "Schema version pin."
-    },
-    "memoryProfileRef": {
-      "type": "string",
-      "minLength": 1,
-      "description": "Stable URI reference for this memory profile. Maps directly to Lattice QueryRoutingDryRunPlan.memoryProfileRef."
-    },
+    "schemaVersion": {"const": "v0.1"},
+    "memoryProfileRef": {"type": "string", "minLength": 1},
     "slashTopicScope": {
       "type": "object",
-      "description": "Identifies the Slash Topic scope and optional New Hope membrane admission context.",
       "additionalProperties": false,
       "required": ["topic", "membraneId"],
       "properties": {
-        "topic": {
-          "type": "string",
-          "minLength": 1,
-          "description": "Slash Topic identifier (e.g. '/eng/reliability')."
-        },
-        "membraneId": {
-          "type": "string",
-          "minLength": 1,
-          "description": "New Hope membrane admission identifier."
-        },
-        "channelRef": {
-          "type": "string",
-          "description": "Optional channel reference within the topic scope."
-        }
+        "topic": {"type": "string", "minLength": 1},
+        "membraneId": {"type": "string", "minLength": 1},
+        "channelRef": {"type": "string"}
+      }
+    },
+    "topologyRoles": {
+      "type": "object",
+      "description": "Explicit role refs preserving Slash Topics as public surface and New Hope as runtime substrate.",
+      "additionalProperties": false,
+      "required": ["publicSurfaceRef", "runtimeSubstrateRef", "runtimeAliasRef", "compatibilityRef"],
+      "properties": {
+        "publicSurfaceRef": {"const": "slash-topics-public-surface"},
+        "runtimeSubstrateRef": {"const": "new-hope-runtime-substrate"},
+        "runtimeAliasRef": {"const": "slash-topics-runtime-alias"},
+        "compatibilityRef": {"const": "new-hope-compatibility"}
       }
     },
     "recallPolicy": {
       "type": "object",
-      "description": "Controls how memory is recalled for this Slash Topic scope.",
       "additionalProperties": false,
       "required": ["scope", "sensitivePayloadStorage", "topK"],
       "properties": {
-        "scope": {
-          "type": "string",
-          "enum": ["slash-topic-scoped", "session-scoped", "read-only"],
-          "description": "Recall boundary for this profile."
-        },
-        "sensitivePayloadStorage": {
-          "type": "string",
-          "enum": ["disallowed", "summarized-only", "allowed-with-redaction"],
-          "description": "Whether raw sensitive payloads may be stored. 'disallowed' is the secure default."
-        },
-        "topK": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 50,
-          "description": "Maximum number of recall hits."
-        },
-        "scopeOrder": {
-          "type": "array",
-          "items": { "type": "string" },
-          "description": "Optional ordered list of scope dimensions for recall resolution."
-        },
-        "includeRelations": {
-          "type": "boolean",
-          "default": false,
-          "description": "Whether to include relation graph entries in recall results."
-        },
-        "includeRawEvents": {
-          "type": "boolean",
-          "default": false,
-          "description": "Whether raw event payloads may be surfaced. Requires an explicit allow policy."
-        }
+        "scope": {"type": "string", "enum": ["slash-topic-scoped", "session-scoped", "read-only"]},
+        "sensitivePayloadStorage": {"type": "string", "enum": ["disallowed", "summarized-only", "allowed-with-redaction"]},
+        "topK": {"type": "integer", "minimum": 1, "maximum": 50},
+        "scopeOrder": {"type": "array", "items": {"type": "string"}},
+        "includeRelations": {"type": "boolean"},
+        "includeRawEvents": {"type": "boolean"}
       }
     },
     "writebackPolicy": {
       "type": "object",
-      "description": "Controls memory writeback behaviour. In dry-run mode writeback must be 'no-writeback'.",
       "additionalProperties": false,
       "required": ["enabled", "dryRunMode"],
       "properties": {
-        "enabled": {
-          "type": "boolean",
-          "description": "Master writeback switch. When false no memory is written regardless of dryRunMode."
-        },
-        "dryRunMode": {
-          "type": "string",
-          "enum": ["no-writeback", "event-refs-only", "summarized-only"],
-          "description": "Behaviour when this profile is used in a dry-run query routing pass. 'no-writeback' is the required default."
-        },
-        "allowedMemoryClasses": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "enum": ["interaction", "fact", "preference", "decision", "summary", "scratch"]
-          },
-          "description": "Memory classes that may be written back when writeback is enabled and not in dry-run."
-        }
+        "enabled": {"type": "boolean"},
+        "dryRunMode": {"type": "string", "enum": ["no-writeback", "event-refs-only", "summarized-only"]},
+        "allowedMemoryClasses": {"type": "array", "items": {"type": "string", "enum": ["interaction", "fact", "preference", "decision", "summary", "scratch"]}}
       }
     },
     "retention": {
       "type": "object",
-      "description": "Retention posture for memories stored under this profile.",
       "additionalProperties": false,
       "required": ["class", "evidenceRequired"],
       "properties": {
-        "class": {
-          "type": "string",
-          "description": "Named retention class (e.g. 'slash-topic-evidence', 'session-transient')."
-        },
-        "evidenceRequired": {
-          "type": "boolean",
-          "description": "Whether an evidence reference is mandatory before a memory entry may be promoted or exported."
-        },
-        "ttlDays": {
-          "type": "integer",
-          "minimum": 0,
-          "description": "Time-to-live in days (0 = session-lifetime only)."
-        }
+        "class": {"type": "string"},
+        "evidenceRequired": {"type": "boolean"},
+        "ttlDays": {"type": "integer", "minimum": 0}
       }
     },
     "redaction": {
       "type": "object",
-      "description": "Redaction rules applied before any stored or recalled content is surfaced.",
       "additionalProperties": false,
       "properties": {
-        "enabled": {
-          "type": "boolean",
-          "description": "Whether redaction is active."
-        },
-        "sensitivityThreshold": {
-          "type": "string",
-          "enum": ["public", "internal", "confidential", "restricted"],
-          "description": "Minimum sensitivity level that triggers redaction."
-        },
-        "redactedFields": {
-          "type": "array",
-          "items": { "type": "string" },
-          "description": "Explicit list of payload fields to redact."
-        }
+        "enabled": {"type": "boolean"},
+        "sensitivityThreshold": {"type": "string", "enum": ["public", "internal", "confidential", "restricted"]},
+        "redactedFields": {"type": "array", "items": {"type": "string"}}
       }
     },
     "summarization": {
       "type": "object",
-      "description": "Summarization settings applied to memories before writeback or promotion.",
       "additionalProperties": false,
       "properties": {
-        "enabled": {
-          "type": "boolean",
-          "description": "Whether automatic summarization is active."
-        },
-        "maxTokens": {
-          "type": "integer",
-          "minimum": 1,
-          "description": "Token budget for generated summaries."
-        },
-        "summaryClass": {
-          "type": "string",
-          "description": "Memory class assigned to automatically generated summary entries."
-        }
+        "enabled": {"type": "boolean"},
+        "maxTokens": {"type": "integer", "minimum": 1},
+        "summaryClass": {"type": "string"}
       }
     },
     "promotion": {
       "type": "object",
-      "description": "Governs elevation of topic-scoped memories to wider scopes.",
       "additionalProperties": false,
       "properties": {
-        "enabled": {
-          "type": "boolean",
-          "description": "Whether promotion from this scope is permitted."
-        },
-        "promotionTargetScope": {
-          "type": "string",
-          "description": "Target scope identifier for promoted memories (e.g. 'workspace', 'user')."
-        },
-        "requiresApproval": {
-          "type": "boolean",
-          "description": "Whether human approval is required before promotion executes."
-        }
+        "enabled": {"type": "boolean"},
+        "promotionTargetScope": {"type": "string"},
+        "requiresApproval": {"type": "boolean"}
       }
     },
     "forgetting": {
       "type": "object",
-      "description": "Policy governing deletion or expiry of memories in this scope.",
       "additionalProperties": false,
       "properties": {
-        "enabled": {
-          "type": "boolean",
-          "description": "Whether automatic forgetting is active."
-        },
-        "policy": {
-          "type": "string",
-          "enum": ["explicit-delete-only", "ttl-based", "evidence-driven"],
-          "description": "Mechanism by which memories are forgotten."
-        }
+        "enabled": {"type": "boolean"},
+        "policy": {"type": "string", "enum": ["explicit-delete-only", "ttl-based", "evidence-driven"]}
       }
     },
     "labProfile": {
       "type": "object",
-      "description": "Tunes embedding, NLP, and multimodal behaviour without launching background lab jobs.",
       "additionalProperties": false,
       "properties": {
-        "embeddingModel": {
-          "type": "string",
-          "description": "Named embedding model to use for this topic scope."
-        },
-        "nlpPipeline": {
-          "type": "string",
-          "description": "Named NLP pipeline variant."
-        },
-        "multimodalEnabled": {
-          "type": "boolean",
-          "description": "Whether multimodal inputs are accepted for this scope."
-        },
-        "launchLabJobs": {
-          "const": false,
-          "description": "Must always be false. Lab profile selection configures behaviour only; it does not trigger background lab jobs."
-        }
+        "embeddingModel": {"type": "string"},
+        "nlpPipeline": {"type": "string"},
+        "multimodalEnabled": {"type": "boolean"},
+        "launchLabJobs": {"const": false}
       }
     },
     "dryRun": {
       "type": "object",
-      "description": "Dry-run configuration for Lattice query routing. When enabled the profile produces memoryProfileRef and memoryEventRef identifiers without performing any recall or writeback.",
       "additionalProperties": false,
       "properties": {
-        "enabled": {
-          "type": "boolean",
-          "description": "When true the profile operates in dry-run mode."
-        },
+        "enabled": {"type": "boolean"},
         "queryRoutingPlan": {
           "type": "object",
-          "description": "Explicit mapping to Lattice QueryRoutingDryRunPlan fields.",
           "additionalProperties": false,
-          "required": ["memoryProfileRef", "memoryEventRef"],
+          "required": ["memoryProfileRef", "memoryEventRef", "publicSurfaceRef", "runtimeSubstrateRef", "runtimeAliasRef", "compatibilityRef"],
           "properties": {
-            "memoryProfileRef": {
-              "type": "string",
-              "minLength": 1,
-              "description": "Stable reference emitted for the memory profile in a dry-run pass. Corresponds to Lattice QueryRoutingDryRunPlan.memoryProfileRef."
-            },
-            "memoryEventRef": {
-              "type": "string",
-              "minLength": 1,
-              "description": "Event reference emitted without performing recall or writeback. Corresponds to Lattice QueryRoutingDryRunPlan.memoryEventRef."
-            }
+            "memoryProfileRef": {"type": "string", "minLength": 1},
+            "memoryEventRef": {"type": "string", "minLength": 1},
+            "publicSurfaceRef": {"const": "slash-topics-public-surface"},
+            "runtimeSubstrateRef": {"const": "new-hope-runtime-substrate"},
+            "runtimeAliasRef": {"const": "slash-topics-runtime-alias"},
+            "compatibilityRef": {"const": "new-hope-compatibility"}
           }
         }
       }
     },
-    "evidenceRefs": {
-      "type": "array",
-      "items": { "type": "string" },
-      "description": "Stable evidence URIs that justify or audit this memory profile configuration."
-    }
+    "evidenceRefs": {"type": "array", "items": {"type": "string"}}
   }
 }
