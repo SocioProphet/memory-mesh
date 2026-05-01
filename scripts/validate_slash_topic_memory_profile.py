@@ -12,6 +12,13 @@ ROOT = Path(__file__).resolve().parents[1]
 SCHEMA = ROOT / "schemas" / "slash-topic-memory-profile.schema.json"
 EXAMPLE = ROOT / "examples" / "slash-topics" / "memory-profile.example.json"
 
+EXPECTED_TOPOLOGY_ROLES = {
+    "publicSurfaceRef": "slash-topics-public-surface",
+    "runtimeSubstrateRef": "new-hope-runtime-substrate",
+    "runtimeAliasRef": "slash-topics-runtime-alias",
+    "compatibilityRef": "new-hope-compatibility",
+}
+
 
 def load_json(path: Path):
     with path.open("r", encoding="utf-8") as handle:
@@ -32,8 +39,6 @@ def main() -> int:
             print(f" - {location}: {error.message}")
         return 1
 
-    # Acceptance-criteria checks from the issue.
-
     recall = example["recallPolicy"]
     if recall["sensitivePayloadStorage"] != "disallowed":
         print(
@@ -48,6 +53,16 @@ def main() -> int:
             "Slash Topic memory profile dryRunMode must be 'no-writeback' "
             "(no memory writeback in dry-run mode)."
         )
+        return 1
+
+    topology_roles = example.get("topologyRoles", {})
+    if topology_roles != EXPECTED_TOPOLOGY_ROLES:
+        print(
+            "Slash Topic memory profile topologyRoles must explicitly preserve "
+            "Slash Topics as public surface and New Hope as runtime substrate."
+        )
+        print(f"expected: {EXPECTED_TOPOLOGY_ROLES}")
+        print(f"actual:   {topology_roles}")
         return 1
 
     dry_run = example.get("dryRun", {})
@@ -70,8 +85,20 @@ def main() -> int:
         )
         return 1
 
+    for field, expected in EXPECTED_TOPOLOGY_ROLES.items():
+        if plan.get(field) != expected:
+            print(
+                f"dryRun.queryRoutingPlan.{field} must be {expected!r}; "
+                "Memory Mesh must mirror the explicit Lattice query-routing role refs."
+            )
+            return 1
+
     if not example.get("evidenceRefs"):
         print("Slash Topic memory profile requires at least one evidenceRef.")
+        return 1
+
+    if "evidence://topology/slash-topics-new-hope-role-split/v0.1" not in example["evidenceRefs"]:
+        print("Slash Topic memory profile must carry topology split evidence.")
         return 1
 
     lab = example.get("labProfile", {})
