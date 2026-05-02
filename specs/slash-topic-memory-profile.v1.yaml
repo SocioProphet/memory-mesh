@@ -12,15 +12,31 @@ metadata:
     - scripts/validate_slash_topic_memory_profile.py
   coordinates:
     slash_topics_issue: "https://github.com/SocioProphet/slash-topics/issues/19"
+    sociosphere_topology_pr: "https://github.com/SocioProphet/sociosphere/pull/236"
+    prophet_platform_query_roles_pr: "https://github.com/SocioProphet/prophet-platform/pull/290"
+    sherlock_role_surfaces_pr: "https://github.com/SocioProphet/sherlock-search/pull/26"
 spec:
   purpose: >-
     Defines the repo-native Memory Mesh contract that attaches a memory posture
     to a Slash Topic scope. This contract provides the governance envelope that
-    Lattice query routing requires: Slash Topics scope, New Hope membrane
-    admission, Memory Mesh profile, lab profile selection, and physical backend
-    routing. It also defines dry-run behaviour so that query routing can produce
-    memory event and evidence references without performing any recall or
-    writeback.
+    Lattice query routing requires: Slash Topics public query/governance surface,
+    New Hope internal membrane/runtime substrate, Memory Mesh profile, lab profile
+    selection, and physical backend routing. It also defines dry-run behaviour so
+    that query routing can produce memory event, topology role, and evidence
+    references without performing any recall or writeback.
+  role_model:
+    publicSurfaceRef:
+      const: slash-topics-public-surface
+      meaning: Slash Topics is the public query/governance surface.
+    runtimeSubstrateRef:
+      const: new-hope-runtime-substrate
+      meaning: New Hope is the internal membrane/runtime substrate.
+    runtimeAliasRef:
+      const: slash-topics-runtime-alias
+      meaning: Future Slash Topics runtime aliases remain explicit and non-surprising.
+    compatibilityRef:
+      const: new-hope-compatibility
+      meaning: New Hope compatibility is preserved instead of hidden behind a rename.
   transport:
     normative:
       protocol: TriTRPC v1
@@ -41,6 +57,21 @@ spec:
         topic: string          # e.g. "/eng/reliability"
         membraneId: string     # New Hope membrane admission ID
         channelRef: string?    # optional channel within the scope
+
+    TopologyRoles:
+      description: >-
+        Explicit Slash Topics / New Hope topology role references. Memory Mesh
+        attaches to Slash Topic scope while preserving New Hope as the runtime
+        substrate and compatibility surface.
+      fields:
+        publicSurfaceRef:
+          const: slash-topics-public-surface
+        runtimeSubstrateRef:
+          const: new-hope-runtime-substrate
+        runtimeAliasRef:
+          const: slash-topics-runtime-alias
+        compatibilityRef:
+          const: new-hope-compatibility
 
     RecallPolicy:
       description: >-
@@ -127,16 +158,26 @@ spec:
       fields:
         memoryProfileRef: string   # stable URI for the active memory profile
         memoryEventRef: string     # dry-run event ref; no recall or writeback occurs
+        publicSurfaceRef:
+          const: slash-topics-public-surface
+        runtimeSubstrateRef:
+          const: new-hope-runtime-substrate
+        runtimeAliasRef:
+          const: slash-topics-runtime-alias
+        compatibilityRef:
+          const: new-hope-compatibility
 
     SlashTopicMemoryProfile:
       description: >-
-        Top-level contract document. Combines all sub-policies and the
-        dry-run plan into a single governed profile attached to a Slash Topic.
+        Top-level contract document. Combines all sub-policies, topology role
+        refs, and the dry-run plan into a single governed profile attached to a
+        Slash Topic.
       fields:
         schemaVersion:
           const: "v0.1"
         memoryProfileRef: string   # Maps to QueryRoutingDryRunPlan.memoryProfileRef
         slashTopicScope: SlashTopicScope
+        topologyRoles: TopologyRoles
         recallPolicy: RecallPolicy
         writebackPolicy: WritebackPolicy
         retention: RetentionConfig
@@ -152,6 +193,14 @@ spec:
         evidenceRefs: [string]
 
   execution_rules:
+    topology_roles:
+      mandatory_enforcement:
+        - publicSurfaceRef must be slash-topics-public-surface.
+        - runtimeSubstrateRef must be new-hope-runtime-substrate.
+        - runtimeAliasRef must be slash-topics-runtime-alias.
+        - compatibilityRef must be new-hope-compatibility.
+        - dryRun.queryRoutingPlan must mirror the same four role refs emitted by Lattice QueryRoutingDryRunPlan.
+        - Memory Mesh must attach to Slash Topic scope and must not treat New Hope as the public surface or hide it behind an implicit rename.
     recall:
       mandatory_enforcement:
         - sensitivePayloadStorage must be 'disallowed' by default; promotion
@@ -174,8 +223,9 @@ spec:
           writeback attempt
     dry_run:
       mandatory_enforcement:
-        - dry-run pass must produce QueryRoutingDryRunPlan with both
-          memoryProfileRef and memoryEventRef populated
+        - dry-run pass must produce QueryRoutingDryRunPlan with memoryProfileRef,
+          memoryEventRef, publicSurfaceRef, runtimeSubstrateRef, runtimeAliasRef,
+          and compatibilityRef populated
         - no recall call is issued to the backend store during a dry-run pass
         - no writeback call is issued during a dry-run pass
         - dry-run events are typed memory.dry-run.planned and must carry
@@ -202,6 +252,10 @@ spec:
       - workload_id
       - slash_topic
       - membrane_id
+      - public_surface_ref
+      - runtime_substrate_ref
+      - runtime_alias_ref
+      - compatibility_ref
       - payload
       - evidence_refs
     vocabulary:
@@ -226,11 +280,16 @@ spec:
     lattice_field_mapping:
       memoryProfileRef: SlashTopicMemoryProfile.memoryProfileRef
       memoryEventRef: SlashTopicMemoryProfile.dryRun.queryRoutingPlan.memoryEventRef
+      publicSurfaceRef: SlashTopicMemoryProfile.topologyRoles.publicSurfaceRef
+      runtimeSubstrateRef: SlashTopicMemoryProfile.topologyRoles.runtimeSubstrateRef
+      runtimeAliasRef: SlashTopicMemoryProfile.topologyRoles.runtimeAliasRef
+      compatibilityRef: SlashTopicMemoryProfile.topologyRoles.compatibilityRef
 
   migration:
     p0_goals:
       - define schema and fixture for slash-topic-scoped memory profiles
       - provide dry-run pass contract aligned with Lattice QueryRoutingDryRunPlan
+      - enforce explicit Slash Topics public surface and New Hope runtime substrate role refs
       - no raw sensitive payload storage by default
       - no memory writeback in dry-run mode
     follow_on:

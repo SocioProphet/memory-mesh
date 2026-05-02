@@ -6,18 +6,31 @@
     "membraneId": "membrane://new-hope/eng-sre-0001",
     "channelRef": "channel://slack/C0ENG-SRE"
   },
+  "topologyRoles": {
+    "publicSurfaceRef": "slash-topics-public-surface",
+    "runtimeSubstrateRef": "new-hope-runtime-substrate",
+    "runtimeAliasRef": "slash-topics-runtime-alias",
+    "compatibilityRef": "new-hope-compatibility"
+  },
   "recallPolicy": {
     "scope": "slash-topic-scoped",
     "sensitivePayloadStorage": "disallowed",
     "topK": 10,
-    "scopeOrder": ["thread", "channel", "workspace"],
+    "scopeOrder": [
+      "thread",
+      "channel",
+      "workspace"
+    ],
     "includeRelations": false,
     "includeRawEvents": false
   },
   "writebackPolicy": {
     "enabled": false,
     "dryRunMode": "no-writeback",
-    "allowedMemoryClasses": ["fact", "summary"]
+    "allowedMemoryClasses": [
+      "fact",
+      "summary"
+    ]
   },
   "retention": {
     "class": "slash-topic-evidence",
@@ -27,7 +40,10 @@
   "redaction": {
     "enabled": true,
     "sensitivityThreshold": "internal",
-    "redactedFields": ["user_email", "pager_duty_key"]
+    "redactedFields": [
+      "user_email",
+      "pager_duty_key"
+    ]
   },
   "summarization": {
     "enabled": true,
@@ -53,11 +69,16 @@
     "enabled": true,
     "queryRoutingPlan": {
       "memoryProfileRef": "memory-profile://slash-topics/eng-reliability/v0.1",
-      "memoryEventRef": "memory-event://dry-run/slash-topics/eng-reliability/evt-dry-0001"
+      "memoryEventRef": "memory-event://dry-run/slash-topics/eng-reliability/evt-dry-0001",
+      "publicSurfaceRef": "slash-topics-public-surface",
+      "runtimeSubstrateRef": "new-hope-runtime-substrate",
+      "runtimeAliasRef": "slash-topics-runtime-alias",
+      "compatibilityRef": "new-hope-compatibility"
     }
   },
   "evidenceRefs": [
     "evidence://memory-profile/slash-topics/eng-reliability/v0.1",
-    "evidence://membrane/new-hope/eng-sre-0001"
+    "evidence://membrane/new-hope/eng-sre-0001",
+    "evidence://topology/slash-topics-new-hope-role-split/v0.1"
   ]
 }

@@ -42,7 +42,15 @@ This context pack is intentionally workroom-scoped. It references the Profession
 
 ## Slash Topic memory profiles
 
-Memory Mesh defines a memory profile contract for Slash Topic scopes that provides the governance envelope for Lattice query routing (Slash Topics scope → New Hope membrane admission → Memory Mesh profile → lab profile selection → physical backend routing).
+Memory Mesh defines a memory profile contract for Slash Topic scopes that provides the governance envelope for Lattice query routing.
+
+The explicit route is:
+
+1. Slash Topics is the public query and governance surface.
+2. New Hope is the internal membrane and runtime substrate.
+3. Memory Mesh attaches to Slash Topic scope after New Hope membrane admission.
+4. Lab profile selection configures recall-time embedding, NLP, and multimodal behavior.
+5. Physical backend routing remains downstream of the governed memory profile.
 
 The contract, example, and spec live at:
 
@@ -63,10 +71,11 @@ Key properties of this contract:
 
 - **No raw sensitive payloads stored by default** – `recallPolicy.sensitivePayloadStorage` defaults to `"disallowed"`.
 - **No memory writeback in dry-run mode** – `writebackPolicy.dryRunMode` must be `"no-writeback"` when dry-run is active.
-- **Explicit Lattice mapping** – `dryRun.queryRoutingPlan` carries both `memoryProfileRef` and `memoryEventRef`, matching Lattice `QueryRoutingDryRunPlan` fields.
+- **Explicit Lattice mapping** – `dryRun.queryRoutingPlan` carries `memoryProfileRef`, `memoryEventRef`, `publicSurfaceRef`, `runtimeSubstrateRef`, `runtimeAliasRef`, and `compatibilityRef`, matching Lattice `QueryRoutingDryRunPlan` fields.
+- **Explicit Slash Topics / New Hope topology** – `topologyRoles.publicSurfaceRef` is `slash-topics-public-surface`; `runtimeSubstrateRef` is `new-hope-runtime-substrate`; `runtimeAliasRef` is `slash-topics-runtime-alias`; and `compatibilityRef` is `new-hope-compatibility`.
 - **Lab profile selection without lab jobs** – `labProfile.launchLabJobs` is an invariant `false`; embedding/NLP/multimodal tuning applies at recall time only.
 
-This contract coordinates with the Slash Topics / New Hope consolidation work in SocioProphet/slash-topics issue 19.
+This contract coordinates with the Slash Topics / New Hope consolidation work in SocioProphet/slash-topics issue 19 and the explicit role split enforced by SocioProphet/sociosphere PR 236, emitted by SocioProphet/prophet-platform PR 290, and indexed by SocioProphet/sherlock-search PR 26.
 
 ## Repository semantics
 

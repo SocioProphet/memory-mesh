@@ -2,13 +2,14 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://socioprophet.io/schemas/memory-mesh/slash-topic-memory-profile.schema.json",
   "title": "SlashTopicMemoryProfile",
-  "description": "Memory Mesh profile contract for Slash Topic scopes. Governs recall, writeback, retention, redaction, summarization, promotion, forgetting, and evidence for a given Slash Topic scope. Also defines dry-run behaviour for Lattice query routing.",
+  "description": "Memory Mesh profile contract for Slash Topic scopes. Governs recall, writeback, retention, redaction, summarization, promotion, forgetting, topology role refs, and evidence for a given Slash Topic scope. Also defines dry-run behaviour for Lattice query routing.",
   "type": "object",
   "additionalProperties": false,
   "required": [
     "schemaVersion",
     "memoryProfileRef",
     "slashTopicScope",
+    "topologyRoles",
     "recallPolicy",
     "writebackPolicy",
     "retention",
@@ -43,6 +44,30 @@
         "channelRef": {
           "type": "string",
           "description": "Optional channel reference within the topic scope."
+        }
+      }
+    },
+    "topologyRoles": {
+      "type": "object",
+      "description": "Explicit Slash Topics / New Hope topology role references. Memory Mesh attaches to Slash Topic scope while preserving New Hope as the internal membrane/runtime substrate.",
+      "additionalProperties": false,
+      "required": ["publicSurfaceRef", "runtimeSubstrateRef", "runtimeAliasRef", "compatibilityRef"],
+      "properties": {
+        "publicSurfaceRef": {
+          "const": "slash-topics-public-surface",
+          "description": "Slash Topics is the public query/governance surface."
+        },
+        "runtimeSubstrateRef": {
+          "const": "new-hope-runtime-substrate",
+          "description": "New Hope is the internal membrane/runtime substrate."
+        },
+        "runtimeAliasRef": {
+          "const": "slash-topics-runtime-alias",
+          "description": "Future Slash Topics runtime aliases remain explicit and non-surprising."
+        },
+        "compatibilityRef": {
+          "const": "new-hope-compatibility",
+          "description": "New Hope compatibility is preserved instead of hidden behind a repo rename."
         }
       }
     },
@@ -232,7 +257,7 @@
     },
     "dryRun": {
       "type": "object",
-      "description": "Dry-run configuration for Lattice query routing. When enabled the profile produces memoryProfileRef and memoryEventRef identifiers without performing any recall or writeback.",
+      "description": "Dry-run configuration for Lattice query routing. When enabled the profile produces memory, event, and topology role references without performing any recall or writeback.",
       "additionalProperties": false,
       "properties": {
         "enabled": {
@@ -243,7 +268,7 @@
           "type": "object",
           "description": "Explicit mapping to Lattice QueryRoutingDryRunPlan fields.",
           "additionalProperties": false,
-          "required": ["memoryProfileRef", "memoryEventRef"],
+          "required": ["memoryProfileRef", "memoryEventRef", "publicSurfaceRef", "runtimeSubstrateRef", "runtimeAliasRef", "compatibilityRef"],
           "properties": {
             "memoryProfileRef": {
               "type": "string",
@@ -254,6 +279,22 @@
               "type": "string",
               "minLength": 1,
               "description": "Event reference emitted without performing recall or writeback. Corresponds to Lattice QueryRoutingDryRunPlan.memoryEventRef."
+            },
+            "publicSurfaceRef": {
+              "const": "slash-topics-public-surface",
+              "description": "Corresponds to Lattice QueryRoutingDryRunPlan.publicSurfaceRef."
+            },
+            "runtimeSubstrateRef": {
+              "const": "new-hope-runtime-substrate",
+              "description": "Corresponds to Lattice QueryRoutingDryRunPlan.runtimeSubstrateRef."
+            },
+            "runtimeAliasRef": {
+              "const": "slash-topics-runtime-alias",
+              "description": "Corresponds to Lattice QueryRoutingDryRunPlan.runtimeAliasRef."
+            },
+            "compatibilityRef": {
+              "const": "new-hope-compatibility",
+              "description": "Corresponds to Lattice QueryRoutingDryRunPlan.compatibilityRef."
             }
           }
         }
