@@ -1,0 +1,35 @@
+{
+  "contextPackId": "urn:srcos:context-pack:ops-history-multi-agent-room-demo",
+  "specVersion": "0.1.0",
+  "scope": {
+    "roomRef": "urn:srcos:matrix-room:sourceos-build",
+    "threadRef": "urn:srcos:thread:ops-history-demo",
+    "workroomRef": "urn:srcos:workroom:professional-intelligence-demo",
+    "topicRef": "urn:srcos:topic:professional-intelligence",
+    "sessionRef": "urn:srcos:agent-session:codex-demo-0001"
+  },
+  "payloadMode": "summary",
+  "sourceEventRefs": [
+    "urn:srcos:ops-history-event:demo-agentterm-0001"
+  ],
+  "artifactRefs": [
+    "urn:srcos:artifact-ref:agentplane-context-intake-demo-0001"
+  ],
+  "policyDecisionRefs": [
+    "urn:srcos:policy-decision:ops-history-hydrate-context-demo-0001",
+    "urn:srcos:policy-decision:ops-history-write-memory-demo-0001"
+  ],
+  "agentRegistryRefs": [
+    "urn:srcos:agent-grant:ops-history-summarizer-demo"
+  ],
+  "redactionRefs": [],
+  "retention": {
+    "mode": "ephemeral",
+    "ttlSeconds": 604800,
+    "writebackAllowed": false,
+    "promotionRequiresPolicyDecision": true
+  },
+  "evidenceRefs": [
+    "urn:srcos:evidence:ops-history-context-pack-multi-agent-room-demo"
+  ]
+}
