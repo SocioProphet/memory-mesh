@@ -1,0 +1,38 @@
+name: Agent Harness Memory Ledger
+
+on:
+  pull_request:
+    paths:
+      - 'schemas/agent-harness-memory-ledger.schema.json'
+      - 'examples/agent-harness/memory-ledger.example.json'
+      - 'scripts/validate_agent_harness_memory_ledger.py'
+      - '.github/workflows/agent-harness-memory-ledger.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'schemas/agent-harness-memory-ledger.schema.json'
+      - 'examples/agent-harness/memory-ledger.example.json'
+      - 'scripts/validate_agent_harness_memory_ledger.py'
+      - '.github/workflows/agent-harness-memory-ledger.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate-agent-harness-memory-ledger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install validation dependency
+        run: python -m pip install jsonschema
+
+      - name: Validate Agent Harness memory ledger
+        run: python scripts/validate_agent_harness_memory_ledger.py
