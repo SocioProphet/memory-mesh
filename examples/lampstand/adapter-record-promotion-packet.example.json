@@ -1,0 +1,90 @@
+{
+  "schemaVersion": "memory-mesh.lampstand-adapter-record-promotion-packet.v1",
+  "packetId": "lampstand-promotion:smart-tree:example:2026-05-06",
+  "sourceAuthority": "lampstand.adapter_records",
+  "promotionMode": "review_only",
+  "createdAt": "2026-05-06T00:00:00Z",
+  "scope": {
+    "scopeType": "repo",
+    "rootRefs": ["~/dev/smart-tree"],
+    "memoryMeshTarget": "memory-mesh://repo/SocioProphet/smart-tree",
+    "slashTopicRef": null,
+    "workroomRef": null
+  },
+  "records": [
+    {
+      "recordId": "lampstand-adapter-record::sha256:repo-context",
+      "recordType": "sourceos.lampstand.repo_context_record.v1",
+      "objectKind": "repo_context",
+      "title": "Repo context: smart-tree",
+      "pathRef": "~/dev/smart-tree",
+      "snippet": "Bounded Smart Tree repo context for sourceos-context adapter.",
+      "classification": "local_only",
+      "handlingTags": ["local-only", "repo-context", "smart-tree"],
+      "metadataHash": "sha256:context",
+      "contentHash": null,
+      "policyDecision": {
+        "decision": "allow",
+        "ruleset": "sourceos.repo_context.read_only"
+      },
+      "source": {
+        "system": "sourceos-smart-tree-adapter",
+        "repo": "SocioProphet/smart-tree"
+      }
+    },
+    {
+      "recordId": "lampstand-adapter-record::sha256:security-signal",
+      "recordType": "sourceos.lampstand.security_search_record.v1",
+      "objectKind": "security_signal",
+      "title": "Security signal: untrusted hook",
+      "pathRef": "settings.json",
+      "snippet": "Advisory security signal produced by Smart Tree.",
+      "classification": "local_only",
+      "handlingTags": ["local-only", "security-advisory", "smart-tree"],
+      "metadataHash": "sha256:security",
+      "contentHash": null,
+      "policyDecision": {
+        "decision": "allow",
+        "ruleset": "sourceos.repo_context.read_only"
+      },
+      "source": {
+        "system": "sourceos-smart-tree-adapter",
+        "repo": "SocioProphet/smart-tree"
+      }
+    }
+  ],
+  "promotionCandidates": [
+    {
+      "candidateId": "memory-candidate:repo-onboarding:smart-tree",
+      "sourceRecordId": "lampstand-adapter-record::sha256:repo-context",
+      "candidateType": "repo_onboarding",
+      "recommendedAction": "review",
+      "memoryKind": "semantic",
+      "content": "Smart Tree provides a bounded SourceOS context adapter that can publish governed local records into Lampstand.",
+      "confidence": 0.78,
+      "tags": ["repo-onboarding", "smart-tree", "lampstand", "sourceos-context"]
+    },
+    {
+      "candidateId": "memory-candidate:security:smart-tree-hooks",
+      "sourceRecordId": "lampstand-adapter-record::sha256:security-signal",
+      "candidateType": "security",
+      "recommendedAction": "review",
+      "memoryKind": "policy",
+      "content": "Security signals from Smart Tree are advisory until Policy Fabric adjudicates them.",
+      "confidence": 0.72,
+      "tags": ["security-advisory", "policy-fabric", "smart-tree"]
+    }
+  ],
+  "policyDecisionRefs": [
+    "policy:sourceos.repo_context.read_only"
+  ],
+  "evidenceRefs": [
+    "lampstand-adapter-record::sha256:repo-context",
+    "lampstand-adapter-record::sha256:security-signal",
+    "source.repo:SocioProphet/smart-tree"
+  ],
+  "notes": [
+    "Review-only packet: no durable memory writeback is implied.",
+    "Lampstand remains the local adapter-record authority; Memory Mesh remains durable memory authority."
+  ]
+}
