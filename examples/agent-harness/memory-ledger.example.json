@@ -1,0 +1,56 @@
+{
+  "schemaVersion": "v0.1",
+  "kind": "AgentHarnessMemoryLedger",
+  "artifactPointer": {
+    "pointerId": "artifact-pointer-agent-harness-readout-v0.1",
+    "uri": "artifact://sha256/0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+    "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+    "mediaType": "application/json",
+    "sizeBytes": 2048,
+    "producedBy": "github://SocioProphet/delivery-excellence-automation/pull/7",
+    "runRef": "agentplane://run/agent-harness-baseline-v0.1",
+    "workspaceRef": "github://SocioProphet/sociosphere",
+    "policyLabels": ["customer-safe", "delivery-metric"],
+    "retentionClass": "run-retained",
+    "replayEligible": true,
+    "redactionState": "none",
+    "createdAt": "2026-05-05T00:00:00Z"
+  },
+  "messageLedgerEvent": {
+    "eventId": "event-artifact-pointer-created-v0.1",
+    "eventType": "artifact-pointer-created",
+    "observedAt": "2026-05-05T00:00:00Z",
+    "runRef": "agentplane://run/agent-harness-baseline-v0.1",
+    "sessionRef": "agentplane://session/agent-harness-baseline-v0.1",
+    "actorRef": "github://mdheller",
+    "subjectRef": "artifact-pointer-agent-harness-readout-v0.1",
+    "evidenceRef": "github://SocioProphet/memory-mesh/pull/23",
+    "artifactPointerRefs": ["artifact-pointer-agent-harness-readout-v0.1"]
+  },
+  "memorySnapshot": {
+    "snapshotId": "memory-snapshot-agent-harness-baseline-v0.1",
+    "sessionRef": "agentplane://session/agent-harness-baseline-v0.1",
+    "runRef": "agentplane://run/agent-harness-baseline-v0.1",
+    "workspaceRef": "github://SocioProphet/sociosphere",
+    "memoryProfileRef": "memorymesh://profile/agent-harness-delivery",
+    "eventRange": {
+      "from": "event-artifact-pointer-created-v0.1",
+      "to": "event-artifact-pointer-created-v0.1"
+    },
+    "artifactPointerRefs": ["artifact-pointer-agent-harness-readout-v0.1"],
+    "policyLabels": ["customer-safe", "delivery-metric"],
+    "sensitivePayloadPosture": "disallowed",
+    "createdAt": "2026-05-05T00:00:00Z"
+  },
+  "recallWritebackEvidence": {
+    "evidenceId": "recall-evidence-agent-harness-baseline-v0.1",
+    "operation": "dry-run-recall",
+    "runRef": "agentplane://run/agent-harness-baseline-v0.1",
+    "memoryProfileRef": "memorymesh://profile/agent-harness-delivery",
+    "queryOrWriteHash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "resultPointerRefs": ["artifact-pointer-agent-harness-readout-v0.1"],
+    "policyDecisionRef": "github://SocioProphet/policy-fabric/pull/60",
+    "sensitivePayloadPosture": "disallowed",
+    "deliveryMetricRefs": ["github://SocioProphet/delivery-excellence-automation/pull/7"]
+  }
+}
