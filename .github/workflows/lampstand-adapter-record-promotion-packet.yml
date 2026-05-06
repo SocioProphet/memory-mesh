@@ -1,0 +1,32 @@
+name: lampstand-adapter-record-promotion-packet
+
+on:
+  pull_request:
+    paths:
+      - "schemas/lampstand-adapter-record-promotion-packet.schema.json"
+      - "examples/lampstand/adapter-record-promotion-packet.example.json"
+      - "scripts/validate_lampstand_adapter_record_promotion_packet.py"
+      - ".github/workflows/lampstand-adapter-record-promotion-packet.yml"
+      - "README.md"
+  push:
+    branches:
+      - main
+    paths:
+      - "schemas/lampstand-adapter-record-promotion-packet.schema.json"
+      - "examples/lampstand/adapter-record-promotion-packet.example.json"
+      - "scripts/validate_lampstand_adapter_record_promotion_packet.py"
+      - ".github/workflows/lampstand-adapter-record-promotion-packet.yml"
+      - "README.md"
+
+jobs:
+  validate-lampstand-promotion-packet:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install validation dependency
+        run: python -m pip install jsonschema
+      - name: Validate Lampstand adapter-record promotion packet
+        run: python scripts/validate_lampstand_adapter_record_promotion_packet.py
