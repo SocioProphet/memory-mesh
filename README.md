@@ -20,6 +20,34 @@ This repository currently includes:
 - importer and validation scripts so upstream resolution happens in one controlled place instead of at runtime;
 - local M2 Mac Podman and Google Cloud review deployment scaffolding.
 
+## Lampstand adapter-record promotion packets
+
+Memory Mesh now carries a review-only promotion-packet contract for Lampstand governed adapter records.
+
+This is the bridge from local evidence to durable memory without collapsing authority boundaries:
+
+- Lampstand remains the `adapter_records` source authority.
+- Sherlock may search adapter records as local evidence.
+- Memory Mesh receives reviewable promotion candidates.
+- Durable writeback remains disabled unless explicitly approved later.
+
+The contract, example, and validator live at:
+
+- `schemas/lampstand-adapter-record-promotion-packet.schema.json`
+- `examples/lampstand/adapter-record-promotion-packet.example.json`
+- `scripts/validate_lampstand_adapter_record_promotion_packet.py`
+
+Validate locally:
+
+```bash
+python -m pip install jsonschema
+python scripts/validate_lampstand_adapter_record_promotion_packet.py
+```
+
+The workflow `.github/workflows/lampstand-adapter-record-promotion-packet.yml` runs this validation when the promotion packet schema, example, validator, or workflow changes.
+
+The example enforces review-only promotion mode, local-only record classification, policy decision references, evidence references, and source-record linkage for every promotion candidate.
+
 ## Professional Intelligence context packs
 
 Memory Mesh now carries the first scoped context-pack surface for the Professional Intelligence OS Gate 3 demo path.
