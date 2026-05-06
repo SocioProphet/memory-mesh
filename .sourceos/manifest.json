@@ -1,0 +1,73 @@
+{
+  "repo": "SocioProphet/memory-mesh",
+  "domain": "memory",
+  "specVersion": "0.1.0",
+  "ownedSchemas": [
+    "MemoryObject",
+    "MemoryProvenance",
+    "MemoryLifecycleState",
+    "MemoryReview"
+  ],
+  "syncEngines": [
+    {
+      "engineId": "sourceos.sync.memory-mesh",
+      "collection": "memory",
+      "schemaVersion": "0.1.0",
+      "ownerRepo": "SocioProphet/memory-mesh",
+      "defaultEnabled": true,
+      "policyClass": "high",
+      "encryptionScope": "workspace",
+      "mergeStrategy": "manual_review",
+      "supportsTombstones": true,
+      "supportsRollback": true,
+      "supportsExport": true,
+      "dangerousFields": [
+        "content",
+        "scope",
+        "retention",
+        "sensitivity",
+        "promotionState",
+        "agentSource"
+      ],
+      "auditEvents": [
+        "memory.proposed",
+        "memory.scoped",
+        "memory.promoted",
+        "memory.quarantined",
+        "memory.revoked",
+        "memory.expired"
+      ]
+    }
+  ],
+  "sourceChannels": [
+    "memory.propose",
+    "memory.review",
+    "memory.promote",
+    "memory.revoke"
+  ],
+  "policyClasses": [
+    "high"
+  ],
+  "auditEvents": [
+    "memory.proposed",
+    "memory.scoped",
+    "memory.promoted",
+    "memory.quarantined",
+    "memory.revoked",
+    "memory.expired"
+  ],
+  "dangerousSurfaces": [
+    "memory.promote",
+    "memory.globalize",
+    "memory.cross_profile_sync",
+    "memory.rewrite",
+    "memory.revoke",
+    "memory.agent_proposed"
+  ],
+  "authorityRepos": [
+    "SourceOS-Linux/sourceos-spec",
+    "SocioProphet/policy-fabric",
+    "SocioProphet/guardrail-fabric"
+  ],
+  "notes": "Governed memory graph. Agents may propose memory; durable and cross-profile promotion requires policy and review."
+}
