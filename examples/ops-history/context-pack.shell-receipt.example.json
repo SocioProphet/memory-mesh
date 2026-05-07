@@ -1,0 +1,32 @@
+{
+  "contextPackId": "urn:srcos:context-pack:ops-history-shell-receipt-demo",
+  "specVersion": "0.1.0",
+  "scope": {
+    "roomRef": null,
+    "threadRef": null,
+    "workroomRef": "urn:srcos:workroom:professional-intelligence-demo",
+    "topicRef": "urn:srcos:topic:professional-intelligence",
+    "sessionRef": "urn:srcos:shell-session:demo-0001"
+  },
+  "payloadMode": "metadata-only",
+  "sourceEventRefs": [
+    "urn:srcos:shell-receipt-event:command-request-demo-0001"
+  ],
+  "artifactRefs": [],
+  "policyDecisionRefs": [
+    "urn:srcos:policy-decision:ops-history-receipt-event-export-demo-0001"
+  ],
+  "agentRegistryRefs": [
+    "urn:srcos:agent-grant:ops-history-operator-assist-demo"
+  ],
+  "redactionRefs": [],
+  "retention": {
+    "mode": "ephemeral",
+    "ttlSeconds": 86400,
+    "writebackAllowed": false,
+    "promotionRequiresPolicyDecision": true
+  },
+  "evidenceRefs": [
+    "urn:srcos:evidence:ops-history-context-pack-shell-receipt-demo"
+  ]
+}
