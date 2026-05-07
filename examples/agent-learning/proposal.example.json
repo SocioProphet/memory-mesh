@@ -1,0 +1,61 @@
+{
+  "apiVersion": "memory.mesh.agent-learning/v1",
+  "kind": "AgentLearningProposal",
+  "proposalId": "urn:srcos:memory-proposal:agent-learning-example",
+  "createdAt": "2026-05-06T00:00:00Z",
+  "sourceSession": {
+    "sessionRef": "urn:srcos:session:agent-learning-example",
+    "taskRef": "urn:srcos:task:agent-learning-example",
+    "repo": "SocioProphet/agentplane",
+    "agentRef": "agentplane:guarded-command-invocation",
+    "workcellArtifactRef": "urn:srcos:artifact:guarded-workcell:example",
+    "invocationArtifactRef": "urn:srcos:artifact:guarded-invocation:example",
+    "stopGateArtifactRef": "urn:srcos:artifact:stop-gate:example"
+  },
+  "destination": {
+    "scope": "repo",
+    "targetRef": "SocioProphet/agentplane",
+    "path": "AGENTS.md",
+    "memoryNamespace": "repo:SocioProphet/agentplane"
+  },
+  "proposalMode": "review_only",
+  "learningType": "playbook-update",
+  "learning": {
+    "title": "Document stop-gate failure remediation in repo playbook",
+    "summary": "When AgentPlane stop-gate evaluation fails because the branch has no upstream, the agent should push the branch or explicitly request a no-PR/no-push exception rather than claiming completion.",
+    "rationale": "The stop-gate evaluator now treats missing upstream evidence as a hard failure. Capturing the remediation in the repo playbook reduces repeat false-done attempts.",
+    "proposedDiff": {
+      "format": "markdown-section",
+      "content": "### Agent completion gate remediation\n\nIf the stop gate reports `branch-pushed` failure, do not claim completion. Push the branch, open or update the PR, then rerun `tools/evaluate_stop_gate.py`. If branch push is intentionally disallowed, request a scoped PolicyFabric BreakGlassOverride and reference it in the stop-gate artifact.\n"
+    },
+    "conflictsWith": [],
+    "confidence": 0.91,
+    "retention": "repo-durable"
+  },
+  "review": {
+    "required": true,
+    "status": "pending",
+    "reviewerRefs": [
+      "human:repo-maintainer"
+    ],
+    "approvalRef": null,
+    "reviewNotes": "Review before modifying AGENTS.md."
+  },
+  "evidenceRefs": [
+    "urn:srcos:artifact:stop-gate:example",
+    "urn:srcos:artifact:guarded-invocation:example"
+  ],
+  "policyDecisionRefs": [
+    "sourceos/core/baseline-allow",
+    "agentplane/stop-gate/branch-pushed"
+  ],
+  "redaction": {
+    "rawSensitivePayloadStored": false,
+    "redactionSummary": "No raw session transcript or secret-bearing payload is stored in this proposal."
+  },
+  "writeback": {
+    "enabled": false,
+    "performed": false,
+    "writebackRef": null
+  }
+}

@@ -20,6 +20,37 @@ This repository currently includes:
 - importer and validation scripts so upstream resolution happens in one controlled place instead of at runtime;
 - local M2 Mac Podman and Google Cloud review deployment scaffolding.
 
+## Governed agent learning proposals
+
+Memory Mesh now carries the first review-only proposal contract for durable agent learnings discovered during guarded AgentPlane sessions.
+
+This is the bridge from agent execution evidence to durable repo/project memory without silent writeback:
+
+- AgentPlane remains the source of guarded workcell, invocation, and stop-gate evidence.
+- guardrail-fabric remains the source of policy-decision evidence.
+- Policy Fabric remains the source of break-glass approval evidence.
+- Memory Mesh receives reviewable learning proposals.
+- Durable writeback remains disabled unless explicitly approved by a later governance flow.
+
+The contract, example, validator, and generator live at:
+
+- `schemas/agent-learning-proposal.schema.json`
+- `examples/agent-learning/proposal.example.json`
+- `scripts/validate_agent_learning_proposal.py`
+- `scripts/create_agent_learning_proposal.py`
+- `scripts/validate_agent_learning_proposal_generator.py`
+
+Validate locally:
+
+```bash
+python -m pip install jsonschema
+make validate-agent-learning-proposal
+```
+
+The workflow `.github/workflows/agent-learning-proposal.yml` runs this validation when the proposal schema, example, generator, validator, workflow, README, or Makefile changes.
+
+The example enforces review-only proposal mode, pending human review, no raw sensitive payload storage, evidence references, policy decision references, repo-local operating-contract destinations, and disabled durable writeback.
+
 ## Lampstand adapter-record promotion packets
 
 Memory Mesh now carries a review-only promotion-packet contract for Lampstand governed adapter records.
