@@ -1,6 +1,6 @@
 PYTHON ?= python
 
-.PHONY: validate-upstreams validate-python validate-deploy-assets validate local-preflight local-up local-smoke local-debug local-down
+.PHONY: validate-upstreams validate-python validate-deploy-assets validate-agent-learning-proposal validate local-preflight local-up local-smoke local-debug local-down
 
 validate-upstreams:
 	$(PYTHON) scripts/validate_upstreams.py third_party/upstreams.lock.yaml
@@ -12,6 +12,10 @@ validate-python:
 
 validate-deploy-assets:
 	$(PYTHON) scripts/validate_deploy_assets.py
+
+validate-agent-learning-proposal:
+	$(PYTHON) scripts/validate_agent_learning_proposal.py
+	$(PYTHON) scripts/validate_agent_learning_proposal_generator.py
 
 validate: validate-upstreams validate-python validate-deploy-assets
 
