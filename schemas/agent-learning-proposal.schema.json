@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.socioprophet.org/memory-mesh/agent-learning-proposal.schema.json",
+  "title": "Memory Mesh Agent Learning Proposal",
+  "type": "object",
+  "required": [
+    "apiVersion",
+    "kind",
+    "proposalId",
+    "createdAt",
+    "sourceSession",
+    "destination",
+    "proposalMode",
+    "learningType",
+    "learning",
+    "review",
+    "evidenceRefs",
+    "policyDecisionRefs"
+  ],
+  "properties": {
+    "apiVersion": { "const": "memory.mesh.agent-learning/v1" },
+    "kind": { "const": "AgentLearningProposal" },
+    "proposalId": { "type": "string", "minLength": 1 },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "sourceSession": {
+      "type": "object",
+      "required": ["sessionRef", "taskRef", "repo", "agentRef"],
+      "properties": {
+        "sessionRef": { "type": "string", "minLength": 1 },
+        "taskRef": { "type": "string", "minLength": 1 },
+        "repo": { "type": "string", "minLength": 1 },
+        "agentRef": { "type": "string", "minLength": 1 },
+        "workcellArtifactRef": { "type": ["string", "null"] },
+        "invocationArtifactRef": { "type": ["string", "null"] },
+        "stopGateArtifactRef": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "destination": {
+      "type": "object",
+      "required": ["scope", "targetRef", "path"],
+      "properties": {
+        "scope": { "enum": ["repo", "project", "user", "organization", "enterprise"] },
+        "targetRef": { "type": "string", "minLength": 1 },
+        "path": { "type": "string", "minLength": 1 },
+        "memoryNamespace": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "proposalMode": { "enum": ["review_only", "approved_writeback"] },
+    "learningType": { "enum": ["operational-fact", "playbook-update", "policy-note", "tooling-note", "risk-note", "architecture-note"] },
+    "learning": {
+      "type": "object",
+      "required": ["title", "summary", "rationale", "proposedDiff"],
+      "properties": {
+        "title": { "type": "string", "minLength": 1 },
+        "summary": { "type": "string", "minLength": 1 },
+        "rationale": { "type": "string", "minLength": 1 },
+        "proposedDiff": {
+          "type": "object",
+          "required": ["format", "content"],
+          "properties": {
+            "format": { "enum": ["unified-diff", "markdown-section", "json-patch", "none"] },
+            "content": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+        "conflictsWith": { "type": "array", "items": { "type": "string" } },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "retention": { "enum": ["session-only", "repo-durable", "project-durable", "org-durable", "enterprise-durable"] }
+      },
+      "additionalProperties": false
+    },
+    "review": {
+      "type": "object",
+      "required": ["required", "status", "reviewerRefs", "approvalRef"],
+      "properties": {
+        "required": { "type": "boolean" },
+        "status": { "enum": ["pending", "approved", "rejected", "superseded"] },
+        "reviewerRefs": { "type": "array", "items": { "type": "string" } },
+        "approvalRef": { "type": ["string", "null"] },
+        "reviewNotes": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "evidenceRefs": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+    "policyDecisionRefs": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+    "redaction": {
+      "type": "object",
+      "required": ["rawSensitivePayloadStored", "redactionSummary"],
+      "properties": {
+        "rawSensitivePayloadStored": { "type": "boolean" },
+        "redactionSummary": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "writeback": {
+      "type": "object",
+      "required": ["enabled", "performed", "writebackRef"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "performed": { "type": "boolean" },
+        "writebackRef": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
