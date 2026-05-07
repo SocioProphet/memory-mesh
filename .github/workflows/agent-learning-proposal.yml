@@ -1,0 +1,38 @@
+name: agent-learning-proposal
+
+on:
+  pull_request:
+    paths:
+      - "schemas/agent-learning-proposal.schema.json"
+      - "examples/agent-learning/proposal.example.json"
+      - "scripts/create_agent_learning_proposal.py"
+      - "scripts/validate_agent_learning_proposal.py"
+      - "scripts/validate_agent_learning_proposal_generator.py"
+      - ".github/workflows/agent-learning-proposal.yml"
+      - "README.md"
+      - "Makefile"
+  push:
+    branches:
+      - main
+    paths:
+      - "schemas/agent-learning-proposal.schema.json"
+      - "examples/agent-learning/proposal.example.json"
+      - "scripts/create_agent_learning_proposal.py"
+      - "scripts/validate_agent_learning_proposal.py"
+      - "scripts/validate_agent_learning_proposal_generator.py"
+      - ".github/workflows/agent-learning-proposal.yml"
+      - "README.md"
+      - "Makefile"
+
+jobs:
+  validate-agent-learning-proposal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install validation dependency
+        run: python -m pip install jsonschema
+      - name: Validate AgentLearningProposal example and generator
+        run: make validate-agent-learning-proposal
