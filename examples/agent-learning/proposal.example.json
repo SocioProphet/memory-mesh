@@ -32,6 +32,70 @@
     "confidence": 0.91,
     "retention": "repo-durable"
   },
+  "observationContext": {
+    "sourceWindowRef": "urn:srcos:source-window:agent-learning-example",
+    "observedAt": "2026-05-06T00:00:00Z",
+    "validTime": {
+      "start": "2026-05-06T00:00:00Z",
+      "end": null
+    },
+    "freshnessPolicy": {
+      "staleAfter": null,
+      "expiryRef": null
+    },
+    "samplingBasis": "Derived from bounded AgentPlane stop-gate evidence artifacts, not from raw transcript scraping.",
+    "compressionBasis": "Condenses repeated stop-gate failure observations into one repo-local playbook update while preserving source artifacts and policy refs."
+  },
+  "representationEnvelope": {
+    "frameType": "proposal",
+    "authoritySource": "SocioProphet/agentplane",
+    "sourceEpoch": "agent-learning-example-epoch-0001",
+    "validityWindow": {
+      "start": "2026-05-06T00:00:00Z",
+      "end": null
+    },
+    "cacheState": "pending_review",
+    "dirtyState": "dirty",
+    "revocationStatus": "active",
+    "correlationId": "urn:srcos:correlation:agent-learning-example",
+    "evidenceRefs": [
+      "urn:srcos:artifact:stop-gate:example",
+      "urn:srcos:artifact:guarded-invocation:example"
+    ],
+    "provenanceRefs": [
+      "urn:srcos:artifact:guarded-workcell:example"
+    ],
+    "policyContext": {
+      "policyDecisionRefs": [
+        "sourceos/core/baseline-allow",
+        "agentplane/stop-gate/branch-pushed"
+      ],
+      "capabilityRefs": [
+        "agentplane:guarded-command-invocation"
+      ]
+    },
+    "writePolicy": {
+      "mode": "no-writeback",
+      "reviewRequired": true
+    }
+  },
+  "learningSignal": {
+    "signalClass": "agent-observed",
+    "noiseAssumption": "A missing upstream branch is treated as stop-gate evidence failure, not as successful completion noise.",
+    "confidence": 0.91,
+    "abstentionBoundary": "If branch push was intentionally prohibited by policy, the proposal must remain pending until the relevant break-glass or exception receipt is attached.",
+    "detectorRef": "agentplane/stop-gate/branch-pushed",
+    "evaluationReceiptRefs": [
+      "urn:srcos:artifact:stop-gate:example"
+    ]
+  },
+  "reviewQueue": {
+    "proposalArrivedAt": "2026-05-06T00:00:00Z",
+    "reviewRequiredBy": null,
+    "blockedReason": "pending-human-review",
+    "staleAfter": null,
+    "promotionLatency": null
+  },
   "review": {
     "required": true,
     "status": "pending",
