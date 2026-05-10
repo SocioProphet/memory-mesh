@@ -71,6 +71,116 @@
       },
       "additionalProperties": false
     },
+    "observationContext": {
+      "type": "object",
+      "required": ["observedAt", "validTime", "freshnessPolicy", "samplingBasis", "compressionBasis"],
+      "properties": {
+        "sourceWindowRef": { "type": ["string", "null"] },
+        "observedAt": { "type": "string", "format": "date-time" },
+        "validTime": {
+          "type": "object",
+          "required": ["start", "end"],
+          "properties": {
+            "start": { "type": ["string", "null"], "format": "date-time" },
+            "end": { "type": ["string", "null"], "format": "date-time" }
+          },
+          "additionalProperties": false
+        },
+        "freshnessPolicy": {
+          "type": "object",
+          "required": ["staleAfter", "expiryRef"],
+          "properties": {
+            "staleAfter": { "type": ["string", "null"], "format": "date-time" },
+            "expiryRef": { "type": ["string", "null"] }
+          },
+          "additionalProperties": false
+        },
+        "samplingBasis": { "type": "string", "minLength": 1 },
+        "compressionBasis": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "representationEnvelope": {
+      "type": "object",
+      "required": [
+        "frameType",
+        "authoritySource",
+        "sourceEpoch",
+        "validityWindow",
+        "cacheState",
+        "dirtyState",
+        "revocationStatus",
+        "correlationId",
+        "evidenceRefs",
+        "provenanceRefs",
+        "policyContext",
+        "writePolicy"
+      ],
+      "properties": {
+        "frameType": { "enum": ["observation", "proposal", "accepted-memory", "playbook-update", "policy-note", "evidence-receipt"] },
+        "authoritySource": { "type": "string", "minLength": 1 },
+        "sourceEpoch": { "type": "string", "minLength": 1 },
+        "validityWindow": {
+          "type": "object",
+          "required": ["start", "end"],
+          "properties": {
+            "start": { "type": ["string", "null"], "format": "date-time" },
+            "end": { "type": ["string", "null"], "format": "date-time" }
+          },
+          "additionalProperties": false
+        },
+        "cacheState": { "enum": ["invalid", "shared_valid", "exclusive_authoritative", "modified_uncommitted", "stale", "revoked", "pending_review", "promoted"] },
+        "dirtyState": { "enum": ["clean", "dirty", "unknown"] },
+        "revocationStatus": { "enum": ["active", "revoked", "superseded", "unknown"] },
+        "correlationId": { "type": "string", "minLength": 1 },
+        "evidenceRefs": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "provenanceRefs": { "type": "array", "items": { "type": "string" } },
+        "policyContext": {
+          "type": "object",
+          "required": ["policyDecisionRefs", "capabilityRefs"],
+          "properties": {
+            "policyDecisionRefs": { "type": "array", "items": { "type": "string" } },
+            "capabilityRefs": { "type": "array", "items": { "type": "string" } }
+          },
+          "additionalProperties": false
+        },
+        "writePolicy": {
+          "type": "object",
+          "required": ["mode", "reviewRequired"],
+          "properties": {
+            "mode": { "enum": ["no-writeback", "reviewed-writeback", "approved-writeback"] },
+            "reviewRequired": { "type": "boolean" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "learningSignal": {
+      "type": "object",
+      "required": ["signalClass", "noiseAssumption", "confidence", "abstentionBoundary"],
+      "properties": {
+        "signalClass": { "enum": ["human-observed", "agent-observed", "detector-derived", "ranker-derived", "evaluator-derived", "mixed"] },
+        "noiseAssumption": { "type": "string", "minLength": 1 },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "abstentionBoundary": { "type": "string", "minLength": 1 },
+        "detectorRef": { "type": ["string", "null"] },
+        "evaluationReceiptRefs": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "reviewQueue": {
+      "type": "object",
+      "required": ["proposalArrivedAt", "reviewRequiredBy", "blockedReason", "staleAfter"],
+      "properties": {
+        "proposalArrivedAt": { "type": "string", "format": "date-time" },
+        "reviewRequiredBy": { "type": ["string", "null"], "format": "date-time" },
+        "blockedReason": { "type": ["string", "null"] },
+        "staleAfter": { "type": ["string", "null"], "format": "date-time" },
+        "promotionLatency": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
     "review": {
       "type": "object",
       "required": ["required", "status", "reviewerRefs", "approvalRef"],
