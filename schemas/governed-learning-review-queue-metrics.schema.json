@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.socioprophet.org/memory-mesh/governed-learning-review-queue-metrics.schema.json",
+  "title": "Memory Mesh Governed Learning Review Queue Metrics",
+  "type": "object",
+  "required": [
+    "apiVersion",
+    "kind",
+    "metricsId",
+    "createdAt",
+    "window",
+    "scope",
+    "counts",
+    "latency",
+    "blockedReasons"
+  ],
+  "properties": {
+    "apiVersion": { "const": "memory.mesh.governed-learning-review-queue/v1" },
+    "kind": { "const": "GovernedLearningReviewQueueMetrics" },
+    "metricsId": { "type": "string", "minLength": 1 },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "window": {
+      "type": "object",
+      "required": ["start", "end"],
+      "properties": {
+        "start": { "type": "string", "format": "date-time" },
+        "end": { "type": "string", "format": "date-time" }
+      },
+      "additionalProperties": false
+    },
+    "scope": {
+      "type": "object",
+      "required": ["scope", "targetRef"],
+      "properties": {
+        "scope": { "enum": ["repo", "project", "user", "organization", "enterprise"] },
+        "targetRef": { "type": "string", "minLength": 1 },
+        "memoryNamespace": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "counts": {
+      "type": "object",
+      "required": ["arrived", "pending", "promoted", "rejected", "revoked", "superseded", "stale"],
+      "properties": {
+        "arrived": { "type": "integer", "minimum": 0 },
+        "pending": { "type": "integer", "minimum": 0 },
+        "promoted": { "type": "integer", "minimum": 0 },
+        "rejected": { "type": "integer", "minimum": 0 },
+        "revoked": { "type": "integer", "minimum": 0 },
+        "superseded": { "type": "integer", "minimum": 0 },
+        "stale": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "latency": {
+      "type": "object",
+      "required": ["averagePromotionSeconds", "p95PromotionSeconds", "oldestPendingSeconds"],
+      "properties": {
+        "averagePromotionSeconds": { "type": ["number", "null"], "minimum": 0 },
+        "p95PromotionSeconds": { "type": ["number", "null"], "minimum": 0 },
+        "oldestPendingSeconds": { "type": ["number", "null"], "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "blockedReasons": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["reason", "count"],
+        "properties": {
+          "reason": { "type": "string", "minLength": 1 },
+          "count": { "type": "integer", "minimum": 0 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "evidenceRefs": { "type": "array", "items": { "type": "string" } },
+    "policyDecisionRefs": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": false
+}
