@@ -1,0 +1,82 @@
+{
+  "apiVersion": "memory.mesh.governed-learning-lifecycle/v1",
+  "kind": "GovernedLearningLifecycleRecord",
+  "recordId": "urn:srcos:memory-lifecycle:rejected-unstable-routing-note",
+  "createdAt": "2026-05-10T20:11:00Z",
+  "lifecycleStatus": "rejected-proposal",
+  "sourceProposalRef": "urn:srcos:memory-proposal:unstable-routing-note",
+  "scope": {
+    "scope": "repo",
+    "targetRef": "SocioProphet/agentplane",
+    "path": "AGENTS.md",
+    "memoryNamespace": "repo:SocioProphet/agentplane"
+  },
+  "memoryObject": {
+    "memoryId": "urn:srcos:memory-candidate:unstable-routing-note",
+    "title": "Rejected routing note",
+    "summary": "A proposed routing note was not promoted because evidence was insufficient and conflicted with authoritative policy.",
+    "retention": "repo-durable",
+    "sensitivity": "internal",
+    "confidence": 0.42,
+    "representationEnvelope": {
+      "frameType": "rejected-proposal",
+      "authoritySource": "SocioProphet/memory-mesh",
+      "sourceEpoch": "governed-learning-lifecycle-v0",
+      "validityWindow": {
+        "start": "2026-05-10T20:11:00Z",
+        "end": null
+      },
+      "cacheState": "invalid",
+      "dirtyState": "clean",
+      "revocationStatus": "active",
+      "correlationId": "urn:srcos:correlation:agent-learning-lifecycle-demo",
+      "evidenceRefs": [
+        "urn:srcos:artifact:insufficient-evidence:unstable-routing-note"
+      ],
+      "provenanceRefs": [
+        "urn:srcos:memory-proposal:unstable-routing-note"
+      ],
+      "policyContext": {
+        "policyDecisionRefs": [
+          "sourceos/core/baseline-deny"
+        ],
+        "capabilityRefs": [
+          "agentplane:guarded-command-invocation"
+        ]
+      },
+      "writePolicy": {
+        "mode": "no-writeback",
+        "reviewRequired": true
+      }
+    }
+  },
+  "governance": {
+    "reviewRequired": true,
+    "reviewStatus": "rejected",
+    "reviewerRefs": [
+      "human:repo-maintainer"
+    ],
+    "approvalRef": null,
+    "decisionRef": "urn:srcos:memory-decision:reject-unstable-routing-note",
+    "decisionRationale": "Proposal lacked sufficient evidence and conflicted with an authoritative routing policy.",
+    "rejectionRef": "urn:srcos:rejection:unstable-routing-note",
+    "conflictsWith": [
+      "urn:srcos:memory:authoritative-routing-policy"
+    ]
+  },
+  "evidenceRefs": [
+    "urn:srcos:artifact:insufficient-evidence:unstable-routing-note"
+  ],
+  "policyDecisionRefs": [
+    "sourceos/core/baseline-deny"
+  ],
+  "redaction": {
+    "rawSensitivePayloadStored": false,
+    "redactionSummary": "Rejected proposal stores only refs and reviewer rationale; no raw session payload is retained."
+  },
+  "writeback": {
+    "enabled": false,
+    "performed": false,
+    "writebackRef": null
+  }
+}

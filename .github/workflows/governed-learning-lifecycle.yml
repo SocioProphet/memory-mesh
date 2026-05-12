@@ -1,0 +1,35 @@
+name: governed-learning-lifecycle
+
+on:
+  pull_request:
+    paths:
+      - "schemas/governed-learning-lifecycle-record.schema.json"
+      - "schemas/governed-learning-review-queue-metrics.schema.json"
+      - "examples/governed-learning/**"
+      - "scripts/validate_governed_learning_lifecycle.py"
+      - ".github/workflows/governed-learning-lifecycle.yml"
+      - "Makefile"
+  push:
+    branches:
+      - main
+    paths:
+      - "schemas/governed-learning-lifecycle-record.schema.json"
+      - "schemas/governed-learning-review-queue-metrics.schema.json"
+      - "examples/governed-learning/**"
+      - "scripts/validate_governed_learning_lifecycle.py"
+      - ".github/workflows/governed-learning-lifecycle.yml"
+      - "Makefile"
+  workflow_dispatch:
+
+jobs:
+  validate-governed-learning-lifecycle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install validation dependency
+        run: python -m pip install jsonschema
+      - name: Validate governed learning lifecycle examples
+        run: make validate-governed-learning-lifecycle

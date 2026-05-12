@@ -1,0 +1,86 @@
+{
+  "apiVersion": "memory.mesh.governed-learning-lifecycle/v1",
+  "kind": "GovernedLearningLifecycleRecord",
+  "recordId": "urn:srcos:memory-lifecycle:revoked-stop-gate-remediation",
+  "createdAt": "2026-05-10T20:12:00Z",
+  "lifecycleStatus": "revoked-memory",
+  "sourceProposalRef": "urn:srcos:memory-proposal:agent-learning-example",
+  "scope": {
+    "scope": "repo",
+    "targetRef": "SocioProphet/agentplane",
+    "path": "AGENTS.md",
+    "memoryNamespace": "repo:SocioProphet/agentplane"
+  },
+  "memoryObject": {
+    "memoryId": "urn:srcos:memory:agentplane-stop-gate-remediation",
+    "title": "Revoked agent completion gate remediation",
+    "summary": "Previously accepted stop-gate remediation memory is tombstoned because a later AgentPlane contract superseded the branch-pushed rule.",
+    "retention": "revoked-tombstone",
+    "sensitivity": "internal",
+    "confidence": 1.0,
+    "representationEnvelope": {
+      "frameType": "revoked-memory",
+      "authoritySource": "SocioProphet/memory-mesh",
+      "sourceEpoch": "governed-learning-lifecycle-v0",
+      "validityWindow": {
+        "start": "2026-05-10T20:12:00Z",
+        "end": null
+      },
+      "cacheState": "revoked",
+      "dirtyState": "clean",
+      "revocationStatus": "revoked",
+      "correlationId": "urn:srcos:correlation:agent-learning-lifecycle-demo",
+      "evidenceRefs": [
+        "urn:srcos:artifact:agentplane-completion-contract-v2",
+        "urn:srcos:tombstone:memory:agentplane-stop-gate-remediation"
+      ],
+      "provenanceRefs": [
+        "urn:srcos:memory-proposal:agent-learning-example",
+        "urn:srcos:memory:agentplane-stop-gate-remediation"
+      ],
+      "policyContext": {
+        "policyDecisionRefs": [
+          "sourceos/core/revocation-allow",
+          "agentplane/completion-contract/v2"
+        ],
+        "capabilityRefs": [
+          "memorymesh:memory.revoke"
+        ]
+      },
+      "writePolicy": {
+        "mode": "tombstone-writeback",
+        "reviewRequired": true
+      }
+    }
+  },
+  "governance": {
+    "reviewRequired": true,
+    "reviewStatus": "revoked",
+    "reviewerRefs": [
+      "human:repo-maintainer"
+    ],
+    "approvalRef": "urn:srcos:approval:agent-learning-example-approved",
+    "decisionRef": "urn:srcos:memory-decision:revoke-stop-gate-remediation",
+    "decisionRationale": "New AgentPlane completion contract supersedes this memory; preserve tombstone instead of deleting history.",
+    "revocationRef": "urn:srcos:revocation:stop-gate-remediation-v1",
+    "tombstoneRef": "urn:srcos:tombstone:memory:agentplane-stop-gate-remediation",
+    "supersededByRef": "urn:srcos:memory:agentplane-completion-contract-v2"
+  },
+  "evidenceRefs": [
+    "urn:srcos:artifact:agentplane-completion-contract-v2",
+    "urn:srcos:tombstone:memory:agentplane-stop-gate-remediation"
+  ],
+  "policyDecisionRefs": [
+    "sourceos/core/revocation-allow",
+    "agentplane/completion-contract/v2"
+  ],
+  "redaction": {
+    "rawSensitivePayloadStored": false,
+    "redactionSummary": "Revocation record stores tombstone and supersession refs only."
+  },
+  "writeback": {
+    "enabled": true,
+    "performed": true,
+    "writebackRef": "urn:srcos:writeback:tombstone-agentplane-stop-gate-remediation"
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "apiVersion": "memory.mesh.governed-learning-review-queue/v1",
+  "kind": "GovernedLearningReviewQueueMetrics",
+  "metricsId": "urn:srcos:metrics:governed-learning-review-queue-demo",
+  "createdAt": "2026-05-10T20:14:00Z",
+  "window": {
+    "start": "2026-05-10T20:00:00Z",
+    "end": "2026-05-10T20:14:00Z"
+  },
+  "scope": {
+    "scope": "repo",
+    "targetRef": "SocioProphet/agentplane",
+    "memoryNamespace": "repo:SocioProphet/agentplane"
+  },
+  "counts": {
+    "arrived": 4,
+    "pending": 1,
+    "promoted": 1,
+    "rejected": 1,
+    "revoked": 1,
+    "superseded": 1,
+    "stale": 0
+  },
+  "latency": {
+    "averagePromotionSeconds": 240,
+    "p95PromotionSeconds": 600,
+    "oldestPendingSeconds": 180
+  },
+  "blockedReasons": [
+    {
+      "reason": "pending-human-review",
+      "count": 1
+    },
+    {
+      "reason": "insufficient-evidence",
+      "count": 1
+    }
+  ],
+  "evidenceRefs": [
+    "urn:srcos:evidence:governed-learning-review-queue-demo"
+  ],
+  "policyDecisionRefs": [
+    "sourceos/core/baseline-allow"
+  ]
+}

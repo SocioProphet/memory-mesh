@@ -1,0 +1,82 @@
+{
+  "apiVersion": "memory.mesh.governed-learning-lifecycle/v1",
+  "kind": "GovernedLearningLifecycleRecord",
+  "recordId": "urn:srcos:memory-lifecycle:accepted-stop-gate-remediation",
+  "createdAt": "2026-05-10T20:10:00Z",
+  "lifecycleStatus": "accepted-memory",
+  "sourceProposalRef": "urn:srcos:memory-proposal:agent-learning-example",
+  "scope": {
+    "scope": "repo",
+    "targetRef": "SocioProphet/agentplane",
+    "path": "AGENTS.md",
+    "memoryNamespace": "repo:SocioProphet/agentplane"
+  },
+  "memoryObject": {
+    "memoryId": "urn:srcos:memory:agentplane-stop-gate-remediation",
+    "title": "Agent completion gate remediation",
+    "summary": "Stop-gate branch-pushed failures require push/PR evidence or scoped exception before completion is claimed.",
+    "retention": "repo-durable",
+    "sensitivity": "internal",
+    "confidence": 0.91,
+    "representationEnvelope": {
+      "frameType": "accepted-memory",
+      "authoritySource": "SocioProphet/memory-mesh",
+      "sourceEpoch": "governed-learning-lifecycle-v0",
+      "validityWindow": {
+        "start": "2026-05-10T20:10:00Z",
+        "end": null
+      },
+      "cacheState": "promoted",
+      "dirtyState": "clean",
+      "revocationStatus": "active",
+      "correlationId": "urn:srcos:correlation:agent-learning-lifecycle-demo",
+      "evidenceRefs": [
+        "urn:srcos:artifact:stop-gate:example",
+        "urn:srcos:artifact:guarded-invocation:example"
+      ],
+      "provenanceRefs": [
+        "urn:srcos:memory-proposal:agent-learning-example"
+      ],
+      "policyContext": {
+        "policyDecisionRefs": [
+          "sourceos/core/baseline-allow",
+          "agentplane/stop-gate/branch-pushed"
+        ],
+        "capabilityRefs": [
+          "agentplane:guarded-command-invocation"
+        ]
+      },
+      "writePolicy": {
+        "mode": "approved-writeback",
+        "reviewRequired": true
+      }
+    }
+  },
+  "governance": {
+    "reviewRequired": true,
+    "reviewStatus": "approved",
+    "reviewerRefs": [
+      "human:repo-maintainer"
+    ],
+    "approvalRef": "urn:srcos:approval:agent-learning-example-approved",
+    "decisionRef": "urn:srcos:memory-decision:accept-stop-gate-remediation",
+    "decisionRationale": "Evidence and policy refs support durable repo-local playbook update."
+  },
+  "evidenceRefs": [
+    "urn:srcos:artifact:stop-gate:example",
+    "urn:srcos:artifact:guarded-invocation:example"
+  ],
+  "policyDecisionRefs": [
+    "sourceos/core/baseline-allow",
+    "agentplane/stop-gate/branch-pushed"
+  ],
+  "redaction": {
+    "rawSensitivePayloadStored": false,
+    "redactionSummary": "Only bounded artifact refs and reviewed summary are stored."
+  },
+  "writeback": {
+    "enabled": true,
+    "performed": true,
+    "writebackRef": "urn:srcos:writeback:agentplane-agents-md-stop-gate-remediation"
+  }
+}

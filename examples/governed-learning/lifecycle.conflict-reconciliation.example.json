@@ -1,0 +1,90 @@
+{
+  "apiVersion": "memory.mesh.governed-learning-lifecycle/v1",
+  "kind": "GovernedLearningLifecycleRecord",
+  "recordId": "urn:srcos:memory-lifecycle:conflict-reconciliation-stop-gate",
+  "createdAt": "2026-05-10T20:13:00Z",
+  "lifecycleStatus": "conflict-reconciliation",
+  "sourceProposalRef": "urn:srcos:memory-proposal:agent-learning-example",
+  "scope": {
+    "scope": "repo",
+    "targetRef": "SocioProphet/agentplane",
+    "path": "AGENTS.md",
+    "memoryNamespace": "repo:SocioProphet/agentplane"
+  },
+  "memoryObject": {
+    "memoryId": "urn:srcos:memory-reconciliation:agentplane-stop-gate-remediation",
+    "title": "Reconcile duplicate stop-gate playbook updates",
+    "summary": "Two proposals targeted AGENTS.md with overlapping stop-gate guidance. The reconciled memory keeps the stricter no-false-done rule and marks the duplicate proposal superseded.",
+    "retention": "repo-durable",
+    "sensitivity": "internal",
+    "confidence": 0.95,
+    "representationEnvelope": {
+      "frameType": "conflict-reconciliation",
+      "authoritySource": "SocioProphet/memory-mesh",
+      "sourceEpoch": "governed-learning-lifecycle-v0",
+      "validityWindow": {
+        "start": "2026-05-10T20:13:00Z",
+        "end": null
+      },
+      "cacheState": "promoted",
+      "dirtyState": "clean",
+      "revocationStatus": "active",
+      "correlationId": "urn:srcos:correlation:agent-learning-lifecycle-demo",
+      "evidenceRefs": [
+        "urn:srcos:artifact:stop-gate:example",
+        "urn:srcos:artifact:duplicate-stop-gate-note"
+      ],
+      "provenanceRefs": [
+        "urn:srcos:memory-proposal:agent-learning-example",
+        "urn:srcos:memory-proposal:duplicate-stop-gate-note"
+      ],
+      "policyContext": {
+        "policyDecisionRefs": [
+          "sourceos/core/baseline-allow",
+          "agentplane/stop-gate/branch-pushed"
+        ],
+        "capabilityRefs": [
+          "memorymesh:memory.reconcile"
+        ]
+      },
+      "writePolicy": {
+        "mode": "approved-writeback",
+        "reviewRequired": true
+      }
+    }
+  },
+  "governance": {
+    "reviewRequired": true,
+    "reviewStatus": "reconciled",
+    "reviewerRefs": [
+      "human:repo-maintainer"
+    ],
+    "approvalRef": "urn:srcos:approval:reconcile-stop-gate-proposals",
+    "decisionRef": "urn:srcos:memory-decision:reconcile-stop-gate-proposals",
+    "decisionRationale": "Duplicate proposals describe the same operational learning. Reconcile to one durable playbook update to avoid duplicate guidance.",
+    "supersedesRefs": [
+      "urn:srcos:memory-proposal:duplicate-stop-gate-note"
+    ],
+    "conflictsWith": [
+      "urn:srcos:memory-proposal:duplicate-stop-gate-note"
+    ],
+    "reconciliationRef": "urn:srcos:reconciliation:stop-gate-proposals"
+  },
+  "evidenceRefs": [
+    "urn:srcos:artifact:stop-gate:example",
+    "urn:srcos:artifact:duplicate-stop-gate-note"
+  ],
+  "policyDecisionRefs": [
+    "sourceos/core/baseline-allow",
+    "agentplane/stop-gate/branch-pushed"
+  ],
+  "redaction": {
+    "rawSensitivePayloadStored": false,
+    "redactionSummary": "Reconciliation record stores proposal refs and reviewed summary only."
+  },
+  "writeback": {
+    "enabled": true,
+    "performed": true,
+    "writebackRef": "urn:srcos:writeback:reconciled-agentplane-agents-md-stop-gate-remediation"
+  }
+}
