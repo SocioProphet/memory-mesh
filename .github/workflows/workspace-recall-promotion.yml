@@ -1,0 +1,33 @@
+name: workspace-recall-promotion
+
+on:
+  pull_request:
+    paths:
+      - "docs/workspace-recall-promotion.md"
+      - "schemas/workspace-recall-promotion-packet.schema.json"
+      - "examples/workspace-recall/**"
+      - "scripts/validate_workspace_recall_promotion_packet.py"
+      - ".github/workflows/workspace-recall-promotion.yml"
+      - "Makefile"
+  push:
+    branches:
+      - main
+    paths:
+      - "docs/workspace-recall-promotion.md"
+      - "schemas/workspace-recall-promotion-packet.schema.json"
+      - "examples/workspace-recall/**"
+      - "scripts/validate_workspace_recall_promotion_packet.py"
+      - ".github/workflows/workspace-recall-promotion.yml"
+      - "Makefile"
+  workflow_dispatch:
+
+jobs:
+  validate-workspace-recall-promotion:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Validate Workspace Recall promotion packet
+        run: make validate-workspace-recall-promotion

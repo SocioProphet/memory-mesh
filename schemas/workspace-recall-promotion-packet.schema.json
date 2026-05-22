@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.socioprophet.org/memory-mesh/workspace-recall-promotion-packet.schema.json",
+  "title": "WorkspaceRecallPromotionPacket",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "apiVersion",
+    "kind",
+    "packetId",
+    "createdAt",
+    "sourceWorkspace",
+    "candidate",
+    "review",
+    "destination",
+    "evidenceRefs",
+    "policyDecisionRefs",
+    "promotion"
+  ],
+  "properties": {
+    "apiVersion": { "const": "memory.mesh.workspace-recall-promotion/v1" },
+    "kind": { "const": "WorkspaceRecallPromotionPacket" },
+    "packetId": { "type": "string", "minLength": 1 },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "sourceWorkspace": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["workroomRef", "contextGraphRef", "runtimeBindingRef"],
+      "properties": {
+        "workroomRef": { "type": "string", "minLength": 1 },
+        "professionalWorkroomRef": { "type": ["string", "null"] },
+        "contextGraphRef": { "type": "string", "minLength": 1 },
+        "runtimeBindingRef": { "type": "string", "minLength": 1 },
+        "agentPlaneEvidenceRef": { "type": ["string", "null"] },
+        "platformRecordRef": { "type": ["string", "null"] }
+      }
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["recallCandidateRef", "summary", "sourceNodeRefs", "scope", "confidence", "reviewState"],
+      "properties": {
+        "recallCandidateRef": { "type": "string", "minLength": 1 },
+        "summary": { "type": "string", "minLength": 1 },
+        "sourceNodeRefs": { "type": "array", "items": { "type": "string" } },
+        "scope": { "enum": ["user", "workroom", "tenant", "project", "organization"] },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "reviewState": { "enum": ["pending", "approved", "rejected", "superseded"] }
+      }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "required", "status", "reviewerRefs", "approvalRef"],
+      "properties": {
+        "mode": { "enum": ["review_only", "approved_writeback"] },
+        "required": { "type": "boolean" },
+        "status": { "enum": ["pending", "approved", "rejected", "superseded"] },
+        "reviewerRefs": { "type": "array", "items": { "type": "string" } },
+        "approvalRef": { "type": ["string", "null"] },
+        "notes": { "type": ["string", "null"] }
+      }
+    },
+    "destination": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scope", "targetRef", "path", "memoryNamespace"],
+      "properties": {
+        "scope": { "enum": ["repo", "project", "user", "organization", "enterprise"] },
+        "targetRef": { "type": "string", "minLength": 1 },
+        "path": { "type": "string", "minLength": 1 },
+        "memoryNamespace": { "type": ["string", "null"] }
+      }
+    },
+    "evidenceRefs": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+    "policyDecisionRefs": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+    "promotion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "performed", "proposalRef", "writebackRef"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "performed": { "type": "boolean" },
+        "proposalRef": { "type": ["string", "null"] },
+        "writebackRef": { "type": ["string", "null"] }
+      }
+    },
+    "redaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "rawPayloadStored": { "type": "boolean" },
+        "summary": { "type": "string" }
+      }
+    }
+  }
+}

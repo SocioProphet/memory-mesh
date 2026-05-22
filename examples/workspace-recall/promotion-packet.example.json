@@ -1,0 +1,58 @@
+{
+  "apiVersion": "memory.mesh.workspace-recall-promotion/v1",
+  "kind": "WorkspaceRecallPromotionPacket",
+  "packetId": "workspace-recall-promotion-demo-0001",
+  "createdAt": "2026-05-22T17:00:00Z",
+  "sourceWorkspace": {
+    "workroomRef": "workroom://workroom-demo-0001",
+    "professionalWorkroomRef": "professional-workroom://workroom-demo-0001",
+    "contextGraphRef": "ctxgraph-demo-0001",
+    "runtimeBindingRef": "runtime-binding-demo-0001",
+    "agentPlaneEvidenceRef": "agentplane://evidence/workroom-context-demo-0001",
+    "platformRecordRef": "platform://workspace-context-record-demo-0001"
+  },
+  "candidate": {
+    "recallCandidateRef": "recall-candidate-demo-0001",
+    "summary": "Workspace context should remain workroom-bound before promotion.",
+    "sourceNodeRefs": [
+      "ctxnode-demo-0002"
+    ],
+    "scope": "workroom",
+    "confidence": 0.91,
+    "reviewState": "pending"
+  },
+  "review": {
+    "mode": "review_only",
+    "required": true,
+    "status": "pending",
+    "reviewerRefs": [
+      "human:workspace-owner"
+    ],
+    "approvalRef": null,
+    "notes": "Review-only packet. Durable writeback is disabled pending approval."
+  },
+  "destination": {
+    "scope": "project",
+    "targetRef": "SocioProphet/prophet-workspace",
+    "path": "docs/context-fabric.md",
+    "memoryNamespace": "workspace-context-fabric"
+  },
+  "evidenceRefs": [
+    "evidence://context-fabric/recall/demo-0001",
+    "agentplane://evidence/workroom-context-demo-0001",
+    "platform://workspace-context-record-demo-0001"
+  ],
+  "policyDecisionRefs": [
+    "policy-decision://policy-demo-ai-use/decision-0001"
+  ],
+  "promotion": {
+    "enabled": false,
+    "performed": false,
+    "proposalRef": null,
+    "writebackRef": null
+  },
+  "redaction": {
+    "rawPayloadStored": false,
+    "summary": "Only refs and reviewed summary are included."
+  }
+}

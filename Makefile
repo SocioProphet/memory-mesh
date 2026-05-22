@@ -1,6 +1,6 @@
 PYTHON ?= python
 
-.PHONY: validate-upstreams validate-python validate-deploy-assets validate-agent-learning-proposal validate-governed-learning-lifecycle validate local-preflight local-up local-smoke local-debug local-down
+.PHONY: validate-upstreams validate-python validate-deploy-assets validate-agent-learning-proposal validate-governed-learning-lifecycle validate-workspace-recall-promotion validate local-preflight local-up local-smoke local-debug local-down
 
 validate-upstreams:
 	$(PYTHON) scripts/validate_upstreams.py third_party/upstreams.lock.yaml
@@ -19,6 +19,9 @@ validate-agent-learning-proposal:
 
 validate-governed-learning-lifecycle:
 	$(PYTHON) scripts/validate_governed_learning_lifecycle.py
+
+validate-workspace-recall-promotion:
+	$(PYTHON) scripts/validate_workspace_recall_promotion_packet.py
 
 validate: validate-upstreams validate-python validate-deploy-assets
 
