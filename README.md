@@ -51,6 +51,29 @@ The workflow `.github/workflows/agent-learning-proposal.yml` runs this validatio
 
 The example enforces review-only proposal mode, pending human review, no raw sensitive payload storage, evidence references, policy decision references, repo-local operating-contract destinations, and disabled durable writeback.
 
+## Channel provenance memory write gates
+
+Memory Mesh now carries a channel-provenance write-gate contract for durable memory candidates that originate from channel-conditioned percepts.
+
+This is the Memory Mesh consumer of ProCybernetica Reciprocal Channel Governance and the Ontogenesis `rcg:` semantic mirror. It does not write memory. It validates that a memory candidate declares channel lineage, percept/interpretant provenance, confusability modes, collapse/repair state, confidence type, authority envelope, evidence refs, policy decision refs, redaction posture, and writeback posture before any durable memory promotion may be considered.
+
+The doctrine, contract, examples, and validator live at:
+
+- `docs/architecture/channel-provenance-write-gates.md`
+- `schemas/channel-provenance-memory-write-gate.schema.json`
+- `examples/channel-provenance/write-gate.candidate-memory.example.json`
+- `examples/channel-provenance/write-gate.confirmed-memory.rejected.example.json`
+- `scripts/validate_channel_provenance_write_gate.py`
+
+Validate locally:
+
+```bash
+python -m pip install jsonschema
+make validate-channel-provenance-write-gate
+```
+
+The candidate-memory example is expected to pass. The confirmed-memory ASR example is expected to fail semantically because the requested sink is disallowed by the ASR advisory authority envelope and lacks required repair/approval posture.
+
 ## Lampstand adapter-record promotion packets
 
 Memory Mesh now carries a review-only promotion-packet contract for Lampstand governed adapter records.
