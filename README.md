@@ -51,6 +51,28 @@ The workflow `.github/workflows/agent-learning-proposal.yml` runs this validatio
 
 The example enforces review-only proposal mode, pending human review, no raw sensitive payload storage, evidence references, policy decision references, repo-local operating-contract destinations, and disabled durable writeback.
 
+## Scenario learning proposal bindings
+
+Memory Mesh now carries a narrow binding contract for durable learning candidates that originate from governed SCOPE-D adversarial scenarios.
+
+This binding does not write memory. It links a SCOPE-D scenario, runtime decision receipts, evidence references, policy decision references, and memory effect metadata to a review-only learning proposal. The purpose is to preserve scenario-derived lessons without allowing scenario output, ATT&CK coverage, dashboard exports, or model summaries to become durable memory by accident.
+
+The contract, example, validator, and workflow live at:
+
+- `schemas/scenario-learning-proposal-binding.schema.json`
+- `examples/scenario-learning/scenario-learning-proposal-binding.example.json`
+- `scripts/validate_scenario_learning_proposal_binding.py`
+- `.github/workflows/scenario-learning-binding.yml`
+
+Validate locally:
+
+```bash
+python -m pip install jsonschema
+make validate-scenario-learning-binding
+```
+
+The example enforces review-only mode, pending human review, no raw sensitive payload storage, scenario/evidence/policy references, required runtime decision receipt references, pending review memory effects, and disabled durable writeback.
+
 ## Lampstand adapter-record promotion packets
 
 Memory Mesh now carries a review-only promotion-packet contract for Lampstand governed adapter records.
