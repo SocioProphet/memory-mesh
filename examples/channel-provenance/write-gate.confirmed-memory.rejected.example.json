@@ -1,0 +1,64 @@
+{
+  "apiVersion": "memory.mesh.channel-provenance-write-gate/v1",
+  "kind": "ChannelProvenanceMemoryWriteGate",
+  "gateId": "urn:srcos:memory-write-gate:asr-confirmed-memory-rejected",
+  "createdAt": "2026-05-29T15:46:00Z",
+  "candidateMemoryRef": "urn:srcos:memory-candidate:bad-confirmed-asr-term",
+  "memoryClass": "confirmed_memory",
+  "sourceChannel": {
+    "channelRef": "rcg:channel:asr.dictation",
+    "channelClass": "human_communication",
+    "substrate": "audio waveform",
+    "captureMethod": "speech-to-text",
+    "trustBoundary": "external_authenticated",
+    "knownConfusabilityModes": ["homophone", "near-homophone", "domain-term-collapse"],
+    "authorityEnvelopeRef": "rcg:authority:asr.advisory"
+  },
+  "percept": {
+    "perceptRef": "rcg:observation:asr.power_babble",
+    "perceptKind": "transcript",
+    "rendering": "power babble",
+    "lossProfile": ["acoustic ambiguity", "semantic ambiguity"]
+  },
+  "interpretant": {
+    "candidateRefs": ["rcg:interpretant:power_babel.term", "rcg:interpretant:power_babble.literal"],
+    "selectedRef": "rcg:interpretant:power_babel.term",
+    "interpretantKind": "claim",
+    "confidenceType": "acoustic",
+    "confidenceLevel": "medium"
+  },
+  "collapseDecision": {
+    "collapseRef": "rcg:collapse:bad.confirmed_memory",
+    "decisionBasis": ["Bad synthetic example: ASR-conditioned phrase attempts confirmed-memory write."],
+    "repairEventRefs": [],
+    "residualUncertainty": ["unrepaired ASR ambiguity"]
+  },
+  "authorityEnvelope": {
+    "allowedSinks": ["display", "suggest", "candidate_memory"],
+    "disallowedSinks": ["confirmed_memory", "graph_edge", "claim_promotion", "policy_binding", "high_risk_action", "publish", "delete", "authorize_agent"],
+    "requiresRepairFor": ["confirmed_memory", "graph_edge", "high_risk_action"]
+  },
+  "promotion": {
+    "requestedSink": "confirmed_memory",
+    "promotionState": "confirmed",
+    "expiryPolicy": null,
+    "revalidationRef": null
+  },
+  "review": {
+    "required": true,
+    "status": "blocked",
+    "reviewerRefs": ["human:operator"],
+    "approvalRef": null
+  },
+  "evidenceRefs": ["synthetic:conversation:rcg-asr-example"],
+  "policyDecisionRefs": ["procybernetica:reciprocal-channel-governance:v0.1"],
+  "redaction": {
+    "rawSensitivePayloadStored": false,
+    "redactionSummary": "Rejected synthetic example stores only bounded transcript metadata."
+  },
+  "writeback": {
+    "enabled": false,
+    "performed": false,
+    "writebackRef": null
+  }
+}
