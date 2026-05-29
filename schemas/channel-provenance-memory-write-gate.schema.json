@@ -1,0 +1,151 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.socioprophet.org/memory-mesh/channel-provenance-memory-write-gate.schema.json",
+  "title": "Memory Mesh Channel Provenance Memory Write Gate",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "apiVersion",
+    "kind",
+    "gateId",
+    "createdAt",
+    "candidateMemoryRef",
+    "memoryClass",
+    "sourceChannel",
+    "percept",
+    "interpretant",
+    "authorityEnvelope",
+    "promotion",
+    "review",
+    "evidenceRefs",
+    "policyDecisionRefs",
+    "redaction",
+    "writeback"
+  ],
+  "properties": {
+    "apiVersion": { "const": "memory.mesh.channel-provenance-write-gate/v1" },
+    "kind": { "const": "ChannelProvenanceMemoryWriteGate" },
+    "gateId": { "type": "string", "pattern": "^urn:srcos:memory-write-gate:[a-z0-9][a-z0-9._:-]*$" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "candidateMemoryRef": { "type": "string", "minLength": 1 },
+    "memoryClass": {
+      "enum": [
+        "observed_memory",
+        "inferred_memory",
+        "confirmed_memory",
+        "operational_memory",
+        "doctrine_memory",
+        "preference_memory",
+        "entity_memory",
+        "stale_memory",
+        "contested_memory",
+        "superseded_memory",
+        "revoked_memory"
+      ]
+    },
+    "sourceChannel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["channelRef", "channelClass", "substrate", "captureMethod", "trustBoundary", "knownConfusabilityModes", "authorityEnvelopeRef"],
+      "properties": {
+        "channelRef": { "type": "string", "minLength": 1 },
+        "channelClass": { "enum": ["human_communication", "machine_observability", "connector", "model_output", "memory_retrieval", "graph_projection", "dashboard_projection", "agent_report", "action_path"] },
+        "substrate": { "type": "string", "minLength": 1 },
+        "captureMethod": { "type": "string", "minLength": 1 },
+        "trustBoundary": { "enum": ["same_process", "same_workspace", "same_org", "external_authenticated", "external_public", "synthetic", "adversarial_or_unknown"] },
+        "knownConfusabilityModes": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "authorityEnvelopeRef": { "type": "string", "minLength": 1 }
+      }
+    },
+    "percept": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["perceptRef", "perceptKind", "rendering", "lossProfile"],
+      "properties": {
+        "perceptRef": { "type": "string", "minLength": 1 },
+        "perceptKind": { "enum": ["transcript", "parsed_event", "summary", "dashboard_panel", "graph_slice", "memory_card", "model_answer", "sensor_reading", "operator_input", "artifact_diff"] },
+        "rendering": { "type": "string", "minLength": 1 },
+        "lossProfile": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "interpretant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidateRefs", "selectedRef", "interpretantKind", "confidenceType", "confidenceLevel"],
+      "properties": {
+        "candidateRefs": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "selectedRef": { "type": "string", "minLength": 1 },
+        "interpretantKind": { "enum": ["instruction", "claim", "preference", "threat", "approval", "refusal", "relation", "state_change", "correction", "evidence", "action_request", "projection_reading"] },
+        "confidenceType": { "enum": ["acoustic", "visual", "semantic", "provenance", "statistical", "operational", "graph_extraction", "model_heuristic", "human_reported", "artifact_verified"] },
+        "confidenceLevel": { "enum": ["low", "medium", "high", "unknown"] }
+      }
+    },
+    "collapseDecision": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["collapseRef", "decisionBasis", "repairEventRefs", "residualUncertainty"],
+      "properties": {
+        "collapseRef": { "type": "string", "minLength": 1 },
+        "decisionBasis": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "repairEventRefs": { "type": "array", "items": { "type": "string" } },
+        "residualUncertainty": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "authorityEnvelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowedSinks", "disallowedSinks", "requiresRepairFor"],
+      "properties": {
+        "allowedSinks": { "type": "array", "items": { "$ref": "#/$defs/sink" } },
+        "disallowedSinks": { "type": "array", "items": { "$ref": "#/$defs/sink" } },
+        "requiresRepairFor": { "type": "array", "items": { "$ref": "#/$defs/sink" } }
+      }
+    },
+    "promotion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requestedSink", "promotionState", "expiryPolicy", "revalidationRef"],
+      "properties": {
+        "requestedSink": { "$ref": "#/$defs/sink" },
+        "promotionState": { "enum": ["raw_observation", "candidate", "confirmed", "contested", "superseded", "expired"] },
+        "expiryPolicy": { "type": ["string", "null"] },
+        "revalidationRef": { "type": ["string", "null"] }
+      }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required", "status", "reviewerRefs", "approvalRef"],
+      "properties": {
+        "required": { "type": "boolean" },
+        "status": { "enum": ["pending", "approved", "rejected", "blocked"] },
+        "reviewerRefs": { "type": "array", "items": { "type": "string" } },
+        "approvalRef": { "type": ["string", "null"] }
+      }
+    },
+    "evidenceRefs": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+    "policyDecisionRefs": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+    "redaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rawSensitivePayloadStored", "redactionSummary"],
+      "properties": {
+        "rawSensitivePayloadStored": { "const": false },
+        "redactionSummary": { "type": "string", "minLength": 1 }
+      }
+    },
+    "writeback": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "performed", "writebackRef"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "performed": { "type": "boolean" },
+        "writebackRef": { "type": ["string", "null"] }
+      }
+    }
+  },
+  "$defs": {
+    "sink": { "enum": ["display", "suggest", "candidate_memory", "confirmed_memory", "graph_edge", "claim_proposal", "claim_promotion", "policy_binding", "reversible_action", "high_risk_action", "publish", "delete", "authorize_agent"] }
+  }
+}
