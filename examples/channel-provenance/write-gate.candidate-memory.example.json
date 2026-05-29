@@ -1,0 +1,64 @@
+{
+  "apiVersion": "memory.mesh.channel-provenance-write-gate/v1",
+  "kind": "ChannelProvenanceMemoryWriteGate",
+  "gateId": "urn:srcos:memory-write-gate:asr-power-babel-candidate",
+  "createdAt": "2026-05-29T15:45:00Z",
+  "candidateMemoryRef": "urn:srcos:memory-candidate:power-babel-term",
+  "memoryClass": "observed_memory",
+  "sourceChannel": {
+    "channelRef": "rcg:channel:asr.dictation",
+    "channelClass": "human_communication",
+    "substrate": "audio waveform",
+    "captureMethod": "speech-to-text",
+    "trustBoundary": "external_authenticated",
+    "knownConfusabilityModes": ["homophone", "near-homophone", "domain-term-collapse"],
+    "authorityEnvelopeRef": "rcg:authority:asr.advisory"
+  },
+  "percept": {
+    "perceptRef": "rcg:observation:asr.power_babble",
+    "perceptKind": "transcript",
+    "rendering": "power babble",
+    "lossProfile": ["acoustic ambiguity", "semantic ambiguity"]
+  },
+  "interpretant": {
+    "candidateRefs": ["rcg:interpretant:power_babel.term", "rcg:interpretant:power_babble.literal"],
+    "selectedRef": "rcg:interpretant:power_babel.term",
+    "interpretantKind": "claim",
+    "confidenceType": "acoustic",
+    "confidenceLevel": "medium"
+  },
+  "collapseDecision": {
+    "collapseRef": "rcg:collapse:asr.term.candidate_memory",
+    "decisionBasis": ["Selected only for candidate memory because phrase is ASR-conditioned and still scoped to current doctrine discussion."],
+    "repairEventRefs": ["rcg:repair:user.confirmed_phrase"],
+    "residualUncertainty": ["Term scope is not durable doctrine."]
+  },
+  "authorityEnvelope": {
+    "allowedSinks": ["display", "suggest", "candidate_memory"],
+    "disallowedSinks": ["confirmed_memory", "graph_edge", "claim_promotion", "policy_binding", "high_risk_action", "publish", "delete", "authorize_agent"],
+    "requiresRepairFor": ["confirmed_memory", "graph_edge", "high_risk_action"]
+  },
+  "promotion": {
+    "requestedSink": "candidate_memory",
+    "promotionState": "candidate",
+    "expiryPolicy": "session-scoped unless explicitly re-confirmed",
+    "revalidationRef": null
+  },
+  "review": {
+    "required": true,
+    "status": "pending",
+    "reviewerRefs": ["human:operator"],
+    "approvalRef": null
+  },
+  "evidenceRefs": ["synthetic:conversation:rcg-asr-example"],
+  "policyDecisionRefs": ["procybernetica:reciprocal-channel-governance:v0.1"],
+  "redaction": {
+    "rawSensitivePayloadStored": false,
+    "redactionSummary": "Stores a bounded synthetic transcript rendering and channel metadata only; no raw audio is retained."
+  },
+  "writeback": {
+    "enabled": false,
+    "performed": false,
+    "writebackRef": null
+  }
+}
