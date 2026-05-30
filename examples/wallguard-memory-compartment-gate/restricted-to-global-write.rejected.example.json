@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "memory-mesh.wallguard-memory-compartment-gate.v0.1",
+  "recordType": "WallGuardMemoryCompartmentGate",
+  "gateId": "wallguard-memory-gate:restricted-global-invalid-001",
+  "operation": "write_memory",
+  "agentContextRef": "agent-wall-context://agent-alpha/client-a/matter-x",
+  "wallRef": "wall://client-a/matter-x",
+  "sourceCompartment": {
+    "compartmentRef": "memory://client-a/matter-x/wall-restricted",
+    "compartmentClass": "wall_restricted",
+    "wallRef": "wall://client-a/matter-x"
+  },
+  "targetCompartment": {
+    "compartmentRef": "memory://global/firm-approved",
+    "compartmentClass": "firm_approved",
+    "wallRef": "none"
+  },
+  "wallDecisionRef": "wallguard-decision://restricted-global-write-invalid-001",
+  "wallDecisionOutcome": "allow",
+  "admitted": true,
+  "admissionDecision": "admit",
+  "reasonCode": "same_wall_allowed",
+  "writeback": {
+    "performed": true,
+    "durableWritebackEnabled": true,
+    "writebackRef": "memory-write://global/firm-approved/invalid-001"
+  },
+  "evidenceRefs": ["SocioProphet/agent-registry#45"],
+  "policyDecisionRefs": ["policy-fabric://wallguard.professional-workroom.v0"]
+}

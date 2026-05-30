@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "memory-mesh.wallguard-memory-compartment-gate.v0.1",
+  "recordType": "WallGuardMemoryCompartmentGate",
+  "gateId": "wallguard-memory-gate:missing-wall-invalid-001",
+  "operation": "semantic_recall",
+  "agentContextRef": "agent-wall-context://agent-alpha/unknown",
+  "wallRef": "unknown",
+  "sourceCompartment": {
+    "compartmentRef": "memory://client-a/matter-x/wall-restricted",
+    "compartmentClass": "wall_restricted",
+    "wallRef": "wall://client-a/matter-x"
+  },
+  "targetCompartment": {
+    "compartmentRef": "agent-session://agent-alpha/unknown",
+    "compartmentClass": "user_private",
+    "wallRef": "unknown"
+  },
+  "wallDecisionRef": "wallguard-decision://missing-wall-context-invalid-001",
+  "wallDecisionOutcome": "allow",
+  "admitted": true,
+  "admissionDecision": "admit",
+  "reasonCode": "same_wall_allowed",
+  "writeback": {
+    "performed": false,
+    "durableWritebackEnabled": false,
+    "writebackRef": ""
+  },
+  "evidenceRefs": ["SocioProphet/ProCybernetica#103"],
+  "policyDecisionRefs": ["policy-fabric://wallguard.professional-workroom.v0"]
+}

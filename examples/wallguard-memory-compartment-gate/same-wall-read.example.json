@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "memory-mesh.wallguard-memory-compartment-gate.v0.1",
+  "recordType": "WallGuardMemoryCompartmentGate",
+  "gateId": "wallguard-memory-gate:same-wall-read-001",
+  "operation": "read_memory",
+  "agentContextRef": "agent-wall-context://agent-alpha/client-a/matter-x",
+  "wallRef": "wall://client-a/matter-x",
+  "sourceCompartment": {
+    "compartmentRef": "memory://client-a/matter-x/wall-restricted",
+    "compartmentClass": "wall_restricted",
+    "wallRef": "wall://client-a/matter-x"
+  },
+  "targetCompartment": {
+    "compartmentRef": "agent-session://agent-alpha/client-a/matter-x",
+    "compartmentClass": "wall_restricted",
+    "wallRef": "wall://client-a/matter-x"
+  },
+  "wallDecisionRef": "wallguard-decision://same-wall-memory-read-001",
+  "wallDecisionOutcome": "allow",
+  "admitted": true,
+  "admissionDecision": "admit",
+  "reasonCode": "same_wall_allowed",
+  "writeback": {
+    "performed": false,
+    "durableWritebackEnabled": false,
+    "writebackRef": ""
+  },
+  "evidenceRefs": ["SocioProphet/agent-registry#45", "SocioProphet/guardrail-fabric#32"],
+  "policyDecisionRefs": ["policy-fabric://wallguard.professional-workroom.v0"]
+}
