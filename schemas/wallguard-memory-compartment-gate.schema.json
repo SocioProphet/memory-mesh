@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.socioprophet.org/memory-mesh/wallguard-memory-compartment-gate.schema.json",
+  "title": "WallGuard Memory Compartment Gate",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "recordType",
+    "gateId",
+    "operation",
+    "agentContextRef",
+    "wallRef",
+    "sourceCompartment",
+    "targetCompartment",
+    "wallDecisionRef",
+    "wallDecisionOutcome",
+    "admitted",
+    "admissionDecision",
+    "reasonCode",
+    "writeback",
+    "evidenceRefs",
+    "policyDecisionRefs"
+  ],
+  "properties": {
+    "schemaVersion": {"const": "memory-mesh.wallguard-memory-compartment-gate.v0.1"},
+    "recordType": {"const": "WallGuardMemoryCompartmentGate"},
+    "gateId": {"type": "string", "minLength": 1},
+    "operation": {"enum": ["read_memory", "write_memory", "semantic_recall", "embedding_write", "memory_promotion", "clean_room_release"]},
+    "agentContextRef": {"type": "string", "minLength": 1},
+    "wallRef": {"type": "string", "minLength": 1},
+    "sourceCompartment": {"$ref": "#/$defs/compartment"},
+    "targetCompartment": {"$ref": "#/$defs/compartment"},
+    "wallDecisionRef": {"type": "string", "minLength": 1},
+    "wallDecisionOutcome": {"enum": ["allow", "deny", "redact", "quarantine", "escalate", "clean_room_release_requested", "clean_room_release_allowed", "clean_room_release_denied"]},
+    "admitted": {"type": "boolean"},
+    "admissionDecision": {"enum": ["admit", "deny", "require-review", "fail-closed"]},
+    "reasonCode": {"enum": ["same_wall_allowed", "cross_wall_denied", "prohibited_memory_compartment", "contaminated_session_state", "clean_room_release_required", "missing_wall_context", "policy_decision_missing"]},
+    "writeback": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["performed", "durableWritebackEnabled", "writebackRef"],
+      "properties": {
+        "performed": {"type": "boolean"},
+        "durableWritebackEnabled": {"type": "boolean"},
+        "writebackRef": {"type": "string"}
+      }
+    },
+    "evidenceRefs": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "policyDecisionRefs": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+  },
+  "$defs": {
+    "compartment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["compartmentRef", "compartmentClass", "wallRef"],
+      "properties": {
+        "compartmentRef": {"type": "string", "minLength": 1},
+        "compartmentClass": {"enum": ["global", "firm_approved", "user_private", "client_scoped", "matter_scoped", "wall_restricted", "contaminated", "clean_room_derived"]},
+        "wallRef": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}
