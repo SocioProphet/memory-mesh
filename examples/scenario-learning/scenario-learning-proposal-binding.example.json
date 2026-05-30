@@ -1,0 +1,47 @@
+{
+  "apiVersion": "memory.mesh.scenario-learning-binding/v1",
+  "kind": "ScenarioLearningProposalBinding",
+  "bindingId": "urn:srcos:memory-binding:scenario-learning:workspace-transduction-001",
+  "createdAt": "2026-05-29T13:30:00Z",
+  "sourceScenario": {
+    "scenarioRef": "adversarial-scenario:workspace-transduction-001",
+    "scenarioClass": "workspace_transduction",
+    "sourceRepo": "SocioProphet/SCOPE-D",
+    "sourcePrRef": "SocioProphet/SCOPE-D#60",
+    "runtimeDecisionReceiptRefs": ["wargames-runtime-receipt:allow-validate-001"],
+    "claimPromotionState": "triaged",
+    "redactionState": "redacted"
+  },
+  "agentLearningProposalRef": "urn:srcos:memory-proposal:scenario-workspace-transduction-001",
+  "memoryEffect": {
+    "effectType": "learning_candidate",
+    "targetRef": "memory-target:scope-d-wargames-lessons",
+    "proposalRequired": true,
+    "reviewState": "pending_review"
+  },
+  "reviewOnlyGate": {
+    "proposalMode": "review_only",
+    "reviewRequired": true,
+    "reviewStatus": "pending",
+    "abstentionBoundary": "Do not write durable memory from SCOPE-D scenario output until the linked AgentLearningProposal is reviewed and explicitly approved by the later governance flow."
+  },
+  "evidenceRefs": [
+    "evidence:scout-header-summary-001",
+    "negative-evidence:missing-validator-record-001",
+    "proof:scout:profile-001"
+  ],
+  "policyDecisionRefs": [
+    "policy:wargames-runtime-dry-run-v0.1",
+    "engagement-authorization:e6-tabletop-001",
+    "control:scenario-boundary-review"
+  ],
+  "redaction": {
+    "rawSensitivePayloadStored": false,
+    "redactionSummary": "Only scenario, evidence, proof, policy, and receipt references are stored. No raw transcript, credentials, payload bodies, or private telemetry are stored."
+  },
+  "writeback": {
+    "enabled": false,
+    "performed": false,
+    "writebackRef": null
+  }
+}
