@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.socioprophet.org/memory-mesh/scenario-learning-proposal-binding.schema.json",
+  "title": "Memory Mesh Scenario Learning Proposal Binding",
+  "type": "object",
+  "required": [
+    "apiVersion",
+    "kind",
+    "bindingId",
+    "createdAt",
+    "sourceScenario",
+    "agentLearningProposalRef",
+    "memoryEffect",
+    "reviewOnlyGate",
+    "evidenceRefs",
+    "policyDecisionRefs",
+    "redaction",
+    "writeback"
+  ],
+  "properties": {
+    "apiVersion": { "const": "memory.mesh.scenario-learning-binding/v1" },
+    "kind": { "const": "ScenarioLearningProposalBinding" },
+    "bindingId": { "type": "string", "pattern": "^urn:srcos:memory-binding:scenario-learning:[a-z0-9][a-z0-9._:-]*$" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "sourceScenario": {
+      "type": "object",
+      "required": ["scenarioRef", "scenarioClass", "sourceRepo", "sourcePrRef", "runtimeDecisionReceiptRefs", "claimPromotionState", "redactionState"],
+      "properties": {
+        "scenarioRef": { "type": "string", "pattern": "^adversarial-scenario:[a-z0-9][a-z0-9._:-]*$" },
+        "scenarioClass": { "type": "string", "minLength": 1 },
+        "sourceRepo": { "type": "string", "minLength": 1 },
+        "sourcePrRef": { "type": ["string", "null"] },
+        "runtimeDecisionReceiptRefs": { "type": "array", "minItems": 1, "items": { "type": "string", "pattern": "^wargames-runtime-receipt:[a-z0-9][a-z0-9._:-]*$" } },
+        "claimPromotionState": { "enum": ["raw", "hypothesis", "triaged", "blocked"] },
+        "redactionState": { "enum": ["redacted", "synthetic", "withheld"] }
+      },
+      "additionalProperties": false
+    },
+    "agentLearningProposalRef": { "type": "string", "minLength": 1 },
+    "memoryEffect": {
+      "type": "object",
+      "required": ["effectType", "targetRef", "proposalRequired", "reviewState"],
+      "properties": {
+        "effectType": { "enum": ["learning_candidate", "false_continuity", "stale_policy_resurrection", "entity_merge_error", "identity_split", "malicious_summary", "privilege_hidden_in_context", "poisoned_embedding", "sandbox_to_canon_leak", "invalid_claim_promotion"] },
+        "targetRef": { "type": "string", "minLength": 1 },
+        "proposalRequired": { "const": true },
+        "reviewState": { "enum": ["pending_review", "blocked"] }
+      },
+      "additionalProperties": false
+    },
+    "reviewOnlyGate": {
+      "type": "object",
+      "required": ["proposalMode", "reviewRequired", "reviewStatus", "abstentionBoundary"],
+      "properties": {
+        "proposalMode": { "const": "review_only" },
+        "reviewRequired": { "const": true },
+        "reviewStatus": { "const": "pending" },
+        "abstentionBoundary": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "evidenceRefs": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+    "policyDecisionRefs": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+    "redaction": {
+      "type": "object",
+      "required": ["rawSensitivePayloadStored", "redactionSummary"],
+      "properties": {
+        "rawSensitivePayloadStored": { "const": false },
+        "redactionSummary": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "writeback": {
+      "type": "object",
+      "required": ["enabled", "performed", "writebackRef"],
+      "properties": {
+        "enabled": { "const": false },
+        "performed": { "const": false },
+        "writebackRef": { "type": "null" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
