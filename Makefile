@@ -42,3 +42,6 @@ local-debug:
 
 local-down:
 	bash deploy/local/scripts/down-local.sh
+
+validate-prophet-mesh-scope-mirror:
+	node scripts/validate-prophet-mesh-scope-mirror.mjs
