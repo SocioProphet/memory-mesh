@@ -1,6 +1,6 @@
 PYTHON ?= python
 
-.PHONY: validate-upstreams validate-python validate-deploy-assets validate-agent-learning-proposal validate-scenario-learning-binding validate-governed-learning-lifecycle validate-workspace-recall-promotion validate-channel-provenance-write-gate validate-wallguard-memory-compartment-gate validate local-preflight local-up local-smoke local-debug local-down
+.PHONY: validate-upstreams validate-python validate-deploy-assets validate-agent-learning-proposal validate-scenario-learning-binding validate-governed-learning-lifecycle validate-workspace-recall-promotion validate-channel-provenance-write-gate validate-wallguard-memory-compartment-gate validate-prophet-mesh-scope-mirror validate local-preflight local-up local-smoke local-debug local-down
 
 validate-upstreams:
 	$(PYTHON) scripts/validate_upstreams.py third_party/upstreams.lock.yaml
@@ -32,7 +32,7 @@ validate-channel-provenance-write-gate:
 validate-wallguard-memory-compartment-gate:
 	$(PYTHON) scripts/validate_wallguard_memory_compartment_gate.py
 
-validate: validate-upstreams validate-python validate-deploy-assets validate-wallguard-memory-compartment-gate
+validate: validate-upstreams validate-python validate-deploy-assets validate-wallguard-memory-compartment-gate validate-prophet-mesh-scope-mirror
 
 local-preflight:
 	bash deploy/local/scripts/preflight-podman-m2.sh

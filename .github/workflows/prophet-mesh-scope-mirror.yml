@@ -1,0 +1,24 @@
+name: prophet-mesh-scope-mirror
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    paths:
+      - "contracts/prophet-mesh/**"
+      - "scripts/validate-prophet-mesh-scope-mirror.mjs"
+      - ".github/workflows/prophet-mesh-scope-mirror.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Validate prophet-mesh memory-scope mirror contract
+        run: node scripts/validate-prophet-mesh-scope-mirror.mjs
