@@ -1,0 +1,65 @@
+{
+  "schemaVersion": "memory-mesh.cross-repo-scope-mirror.v0.1",
+  "kind": "CrossRepoScopeMirror",
+  "contractVersion": "v0.1",
+  "mirrorId": "memory-mesh:prophet-mesh-memory-scope:v0.1",
+  "createdAt": "2026-06-10T00:00:00Z",
+  "sourceAuthority": {
+    "repo": "SocioProphet/prophet-mesh",
+    "path": "specs/runtime-release-bundle.yaml",
+    "contractVersion": "v0.1",
+    "claim": "memory_scope field in execution_trace must be explicit and non-empty"
+  },
+  "mirrorAuthority": {
+    "repo": "SocioProphet/memory-mesh",
+    "path": "contracts/prophet-mesh/prophet-mesh-memory-scope.v0.1.json",
+    "attestation": "memory-mesh independently mirrors the memory-scope policy boundary established by prophet-mesh"
+  },
+  "scopePolicy": {
+    "requiredField": "execution_trace.memory_scope",
+    "allowedScopePatterns": [
+      "relationship_context:approved",
+      "noetica-session-local",
+      "noetica-session-local:*",
+      "unscoped"
+    ],
+    "prohibitedValues": [null, ""],
+    "enforcement": "reject_if_absent_or_empty",
+    "effectBoundary": {
+      "workspaceWriteEnabled": false,
+      "externalSendEnabled": false,
+      "effectEnabled": false
+    }
+  },
+  "privatePreviewInvariants": [
+    "execution_trace_must_include_memory_scope",
+    "memory_scope_must_be_explicit",
+    "memory_scope_must_not_be_empty_string",
+    "memory_scope_must_match_allowed_pattern_or_be_scoped_local"
+  ],
+  "nonProductionBoundary": {
+    "claim": "This mirror contract covers dry-run and receipt-only modes only. Live execution scope policy requires a separate contract version.",
+    "coveredModes": ["dry_run_receipt_preview", "receipt_only"],
+    "excludedModes": ["live_execution"]
+  },
+  "crossRepoTraceability": {
+    "prophetMeshAdapterRef": {
+      "repo": "SocioProphet/agentplane",
+      "path": "contracts/prophet-mesh/prophet-mesh-agentplane-adapter.v0.1.json",
+      "contractVersion": "v0.1",
+      "mergeCommit": "faa767f42028ad0f2475c993700cdbef8490a38e",
+      "contentSha256": "38a3edb62813521a62f257f3f952271255d25dc3a05a14d6b96f04a6ff9b4268",
+      "mode": "dry_run_receipt_preview"
+    },
+    "runtimeReleaseBundleContract": {
+      "repo": "SocioProphet/prophet-mesh",
+      "path": "specs/runtime-release-bundle.yaml",
+      "invariant": "execution_trace_must_include_memory_scope"
+    }
+  },
+  "promotionNotes": [
+    "Memory-scope authority was self-attested in prophet-mesh only prior to this mirror.",
+    "This contract closes the symmetry gap: registry mirrors choir authority, model-router mirrors routing policy, agentplane projects execution receipts, memory-mesh now mirrors memory-scope policy.",
+    "No live execution scope is claimed. Non-production boundary applies."
+  ]
+}
