@@ -1,0 +1,208 @@
+id: agent-harness-memory-ledger
+version: v0.1
+status: planning-baseline
+owner_plane: memory-mesh
+consumers:
+  - SocioProphet/agentplane
+  - SocioProphet/delivery-excellence
+  - SocioProphet/delivery-excellence-automation
+  - SocioProphet/policy-fabric
+  - SocioProphet/SCOPE-D
+  - SocioProphet/sociosphere
+
+purpose: >-
+  Define the Memory Mesh contract for agent-harness evidence, artifact pointers,
+  message-native run ledgers, recall/writeback posture, memory snapshots, and
+  Delivery Excellence scoreboard feeds.
+
+boundary:
+  memory_mesh_owns:
+    - recall and writeback APIs
+    - context-pack contracts
+    - memory profiles and memory-event refs
+    - content-addressed artifact pointers
+    - message-native run-ledger storage seams
+    - memory snapshots used by AgentPlane sessions
+    - retention and sensitive-payload posture
+    - recall/writeback evidence exported to Delivery Excellence
+  memory_mesh_does_not_own:
+    - AgentPlane graph execution
+    - Policy Fabric admission or promotion gates
+    - Delivery Excellence KPI/OKR definitions and scoreboards
+    - SocioSphere topology authority
+    - BearBrowser or TurtleTerm runtime behavior
+    - SCOPE-D security exercise execution
+
+core_contracts:
+  ArtifactPointer:
+    description: Content-addressed pointer for large, sensitive, or replay-critical artifacts.
+    required_fields:
+      - pointer_id
+      - uri
+      - sha256
+      - media_type
+      - size_bytes
+      - produced_by
+      - run_ref
+      - workspace_ref
+      - policy_labels
+      - retention_class
+      - replay_eligible
+      - redaction_state
+      - created_at
+    uri_shape: artifact://sha256/<digest>
+    invariants:
+      - Raw sensitive payloads are not stored by default.
+      - Pointers must be immutable once sealed.
+      - Replay-eligible artifacts must declare source, digest, and policy labels.
+      - Redacted artifacts must preserve tombstone or redaction lineage.
+
+  MessageLedgerEvent:
+    description: Message-native event unit for run, tool, model, memory, policy, and human-control history.
+    required_fields:
+      - event_id
+      - event_type
+      - observed_at
+      - run_ref
+      - session_ref
+      - actor_ref
+      - subject_ref
+      - evidence_ref
+    event_types:
+      - model-input
+      - model-output
+      - tool-call
+      - tool-result
+      - memory-recall
+      - memory-writeback
+      - artifact-pointer-created
+      - policy-decision
+      - human-control-event
+      - browser-receipt
+      - terminal-receipt
+      - failure-diagnosis
+      - promotion-decision
+    invariants:
+      - Events must be append-oriented.
+      - Large payloads must be referenced through ArtifactPointer.
+      - Delivery Excellence receives metrics projections, not unrestricted raw ledgers.
+
+  MemorySnapshot:
+    description: Bounded memory state captured for AgentPlane session replay and resume.
+    required_fields:
+      - snapshot_id
+      - session_ref
+      - run_ref
+      - workspace_ref
+      - memory_profile_ref
+      - event_range
+      - artifact_pointer_refs
+      - policy_labels
+      - sensitive_payload_posture
+      - created_at
+    invariants:
+      - Snapshot must identify profile and event range.
+      - Snapshot must not silently widen recall/writeback scope.
+      - Snapshot must be consumable by AgentPlane replay without granting new authority.
+
+  RecallWritebackEvidence:
+    description: Evidence record for memory recall and memory writeback decisions.
+    required_fields:
+      - evidence_id
+      - operation
+      - run_ref
+      - memory_profile_ref
+      - query_or_write_hash
+      - result_pointer_refs
+      - policy_decision_ref
+      - sensitive_payload_posture
+      - delivery_metric_refs
+    operations:
+      - recall
+      - writeback
+      - dry-run-recall
+      - dry-run-writeback
+    invariants:
+      - Dry-run mode must not write back.
+      - Sensitive payload storage must be explicitly declared.
+      - Policy decision refs are required for controlled memory operations.
+
+delivery_excellence_projection:
+  emits_to_contracts:
+    - DeliveryMetricEvent
+    - ScoreboardSnapshot
+    - CustomerProofReadout
+    - HumanControlEvent
+  metric_families:
+    reliability:
+      - recall-success-rate
+      - writeback-success-rate
+      - snapshot-replay-readiness
+      - artifact-pointer-resolution-rate
+    governance:
+      - policy-blocked-memory-operation-count
+      - sensitive-payload-storage-denial-count
+      - redaction-tombstone-count
+    quality:
+      - context-pack-completeness
+      - retrieval-relevance-review-score
+      - contradiction-or-drift-count
+    cost:
+      - memory-storage-growth
+      - retrieval-latency
+      - avoided-context-token-count
+  projection_rules:
+    - Delivery Excellence receives scored/readout records, not unrestricted memory payloads.
+    - Customer-safe readouts may reference artifact ids and hashes, but not raw sensitive payloads.
+    - Human overrides to recall/writeback policy must be represented as HumanControlEvent refs.
+
+agentplane_integration:
+  consumed_by_agentplane:
+    - ArtifactPointer
+    - MemorySnapshot
+    - RecallWritebackEvidence
+    - context-pack refs
+  produced_for_agentplane:
+    - session memory mount refs
+    - replay memory snapshot refs
+    - artifact pointer refs
+  invariants:
+    - AgentPlane runs do not gain authority from memory snapshots alone.
+    - Memory snapshots are inputs to replay, not implicit policy grants.
+    - Every replay-critical memory artifact must be digest-addressed.
+
+policy_fabric_integration:
+  required_policy_refs:
+    - memory-profile-admission
+    - recall-scope-admission
+    - writeback-scope-admission
+    - retention-class-decision
+    - sensitive-payload-storage-decision
+    - redaction-decision
+  invariants:
+    - Policy Fabric decides authority; Memory Mesh records and enforces memory posture.
+    - Memory Mesh must fail closed when policy refs are missing for controlled operations.
+
+scope_d_integration:
+  risk_assessment_targets:
+    - memory poisoning
+    - prompt injection through retrieved context
+    - tool poisoning through recalled instructions
+    - vector-store drift
+    - redaction bypass
+    - artifact-pointer spoofing
+    - cross-tenant recall bleed
+  outputs_consumed:
+    - memory-risk-score
+    - recall-poisoning-finding
+    - writeback-abuse-finding
+    - graph-memory-robustness-finding
+
+initial_done_criteria:
+  - ArtifactPointer schema exists with example and validation.
+  - MessageLedgerEvent schema exists with example and validation.
+  - MemorySnapshot schema exists with example and validation.
+  - RecallWritebackEvidence schema exists with example and validation.
+  - AgentPlane can reference memory snapshots and artifact pointers in EvidencePack.
+  - Delivery Excellence can consume memory metric projections without raw payload access.
+  - SCOPE-D has a memory-risk assessment lane referencing this contract.

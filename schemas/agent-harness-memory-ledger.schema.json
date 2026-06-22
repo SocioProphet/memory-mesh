@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://socioprophet.io/schemas/memory-mesh/agent-harness-memory-ledger.schema.json",
+  "title": "AgentHarnessMemoryLedger",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "kind", "artifactPointer", "messageLedgerEvent", "memorySnapshot", "recallWritebackEvidence"],
+  "properties": {
+    "schemaVersion": { "const": "v0.1" },
+    "kind": { "const": "AgentHarnessMemoryLedger" },
+    "artifactPointer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pointerId", "uri", "sha256", "mediaType", "sizeBytes", "producedBy", "runRef", "workspaceRef", "policyLabels", "retentionClass", "replayEligible", "redactionState", "createdAt"],
+      "properties": {
+        "pointerId": { "type": "string" },
+        "uri": { "type": "string" },
+        "sha256": { "type": "string" },
+        "mediaType": { "type": "string" },
+        "sizeBytes": { "type": "integer" },
+        "producedBy": { "type": "string" },
+        "runRef": { "type": "string" },
+        "workspaceRef": { "type": "string" },
+        "policyLabels": { "type": "array", "items": { "type": "string" } },
+        "retentionClass": { "type": "string", "enum": ["ephemeral", "run-retained", "release-retained", "customer-proof-retained"] },
+        "replayEligible": { "type": "boolean" },
+        "redactionState": { "type": "string", "enum": ["none", "redacted", "tombstoned"] },
+        "createdAt": { "type": "string" }
+      }
+    },
+    "messageLedgerEvent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["eventId", "eventType", "observedAt", "runRef", "sessionRef", "actorRef", "subjectRef", "evidenceRef"],
+      "properties": {
+        "eventId": { "type": "string" },
+        "eventType": { "type": "string", "enum": ["model-input", "model-output", "tool-call", "tool-result", "memory-recall", "memory-writeback", "artifact-pointer-created", "policy-decision", "human-control-event", "browser-receipt", "terminal-receipt", "failure-diagnosis", "promotion-decision"] },
+        "observedAt": { "type": "string" },
+        "runRef": { "type": "string" },
+        "sessionRef": { "type": "string" },
+        "actorRef": { "type": "string" },
+        "subjectRef": { "type": "string" },
+        "evidenceRef": { "type": "string" },
+        "artifactPointerRefs": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "memorySnapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["snapshotId", "sessionRef", "runRef", "workspaceRef", "memoryProfileRef", "eventRange", "artifactPointerRefs", "policyLabels", "sensitivePayloadPosture", "createdAt"],
+      "properties": {
+        "snapshotId": { "type": "string" },
+        "sessionRef": { "type": "string" },
+        "runRef": { "type": "string" },
+        "workspaceRef": { "type": "string" },
+        "memoryProfileRef": { "type": "string" },
+        "eventRange": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["from", "to"],
+          "properties": {
+            "from": { "type": "string" },
+            "to": { "type": "string" }
+          }
+        },
+        "artifactPointerRefs": { "type": "array", "items": { "type": "string" } },
+        "policyLabels": { "type": "array", "items": { "type": "string" } },
+        "sensitivePayloadPosture": { "type": "string", "enum": ["disallowed", "redacted-only", "allowed-by-policy"] },
+        "createdAt": { "type": "string" }
+      }
+    },
+    "recallWritebackEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evidenceId", "operation", "runRef", "memoryProfileRef", "queryOrWriteHash", "resultPointerRefs", "policyDecisionRef", "sensitivePayloadPosture", "deliveryMetricRefs"],
+      "properties": {
+        "evidenceId": { "type": "string" },
+        "operation": { "type": "string", "enum": ["recall", "writeback", "dry-run-recall", "dry-run-writeback"] },
+        "runRef": { "type": "string" },
+        "memoryProfileRef": { "type": "string" },
+        "queryOrWriteHash": { "type": "string" },
+        "resultPointerRefs": { "type": "array", "items": { "type": "string" } },
+        "policyDecisionRef": { "type": "string" },
+        "sensitivePayloadPosture": { "type": "string", "enum": ["disallowed", "redacted-only", "allowed-by-policy"] },
+        "deliveryMetricRefs": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}
