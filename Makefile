@@ -7,8 +7,9 @@ validate-upstreams:
 	$(PYTHON) scripts/render_import_plan.py third_party/upstreams.lock.yaml --output import-plan.json
 
 validate-python:
-	$(PYTHON) -m py_compile services/memoryd/app/*.py adapters/litellm/*.py scripts/*.py
+	$(PYTHON) -m py_compile services/memoryd/app/*.py services/workspace_ingestion/app/*.py adapters/litellm/*.py scripts/*.py
 	$(PYTHON) -m unittest discover -s services/memoryd/tests -p 'test_*.py'
+	$(PYTHON) -m unittest discover -s services/workspace_ingestion/tests -p 'test_*.py'
 
 validate-deploy-assets:
 	$(PYTHON) scripts/validate_deploy_assets.py
